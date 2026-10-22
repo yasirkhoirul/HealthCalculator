@@ -25,7 +25,7 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
   late final TextEditingController _campusController;
   late final TextEditingController _passwordController;
 
-  bool _obscurePassword = true;
+  late final ValueNotifier<bool> _obscurePassword;
 
   @override
   void initState() {
@@ -34,6 +34,7 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
     _emailController = TextEditingController();
     _campusController = TextEditingController();
     _passwordController = TextEditingController();
+    _obscurePassword = ValueNotifier<bool>(true);
   }
 
   @override
@@ -42,6 +43,7 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
     _emailController.dispose();
     _campusController.dispose();
     _passwordController.dispose();
+    _obscurePassword.dispose();
     super.dispose();
   }
 
@@ -124,34 +126,37 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
           const SizedBox(height: 12),
 
           // 4. Kata Sandi
-          AppTextField(
-            controller: _passwordController,
-            hintText: 'Kata sandi minimal 6 karakter',
-            obscureText: _obscurePassword,
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.textSecondary,
-              size: 22,
-            ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
-                color: AppColors.textMuted,
-                size: 20,
-              ),
-              onPressed: () {
-                setState(() {
-                  _obscurePassword = !_obscurePassword;
-                });
-              },
-            ),
-            validator: (value) {
-              if (value == null || value.length < 6) {
-                return 'Kata sandi minimal 6 karakter';
-              }
-              return null;
+          ValueListenableBuilder<bool>(
+            valueListenable: _obscurePassword,
+            builder: (context, isObscure, child) {
+              return AppTextField(
+                controller: _passwordController,
+                hintText: 'Kata sandi minimal 6 karakter',
+                obscureText: isObscure,
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.textSecondary,
+                  size: 22,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isObscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _obscurePassword.value = !_obscurePassword.value;
+                  },
+                ),
+                validator: (value) {
+                  if (value == null || value.length < 6) {
+                    return 'Kata sandi minimal 6 karakter';
+                  }
+                  return null;
+                },
+              );
             },
           ),
 

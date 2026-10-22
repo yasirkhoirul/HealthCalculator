@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
+import '../../../../router/app_router.dart';
+import '../viewmodels/auth_view_models.dart';
 import '../widgets/auth_signup_form_widget.dart';
 import '../widgets/auth_social_button_widget.dart';
 
-/// Pure UI Scaffold Page for StudyMap Auth Sign Up / Registration.
+/// Scaffold Page for StudyMap Auth Sign Up / Registration with ViewModel integration.
 class AuthSignUpPage extends StatefulWidget {
   const AuthSignUpPage({super.key});
 
@@ -12,8 +16,6 @@ class AuthSignUpPage extends StatefulWidget {
 }
 
 class _AuthSignUpPageState extends State<AuthSignUpPage> {
-  bool _isLoading = false;
-
   void _showFeedback(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -30,29 +32,41 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
     );
   }
 
-  void _handleGoogleSignUp() {
-    setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showFeedback('Melanjutkan pendaftaran dengan Google...');
-      }
-    });
+  Future<void> _handleGoogleSignUp() async {
+    final success = await context.read<AuthViewModel>().signInWithGoogle();
+    if (!mounted) return;
+    if (success) {
+      _showFeedback('Melanjutkan pendaftaran dengan Google...');
+    } else {
+      final error = context.read<AuthViewModel>().errorMessage;
+      if (error != null) _showFeedback(error);
+    }
   }
 
-  void _handleSignUpSubmit() {
-    setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showFeedback('Akun berhasil dibuat! Silakan masuk.');
-        Navigator.of(context).pop();
+  Future<void> _handleSignUpSubmit() async {
+    final success = await context.read<AuthViewModel>().signUpWithEmail(
+      name: '',
+      email: '',
+      password: '',
+      campus: '',
+    );
+    if (!mounted) return;
+    if (success) {
+      _showFeedback('Akun berhasil dibuat! Silakan masuk.');
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.goNamed(AppRouter.login);
       }
-    });
+    } else {
+      final error = context.read<AuthViewModel>().errorMessage;
+      if (error != null) _showFeedback(error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AuthViewModel>().isLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -65,7 +79,13 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
             color: AppColors.textPrimary,
             size: 22,
           ),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.goNamed(AppRouter.login);
+            }
+          },
         ),
         title: const Text(
           'Daftar StudyMap',
@@ -122,7 +142,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
 
                     // Google Sign Up Button
                     AuthSocialButtonWidget(
-                      isLoading: _isLoading,
+                      isLoading: isLoading,
                       onGoogleSignIn: _handleGoogleSignUp,
                     ),
 
@@ -161,7 +181,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
 
                     // Sign Up Form
                     AuthSignUpFormWidget(
-                      isLoading: _isLoading,
+                      isLoading: isLoading,
                       onSignUpSuccess: _handleSignUpSubmit,
                     ),
 
@@ -243,7 +263,13 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
           ),
         ),
         GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.goNamed(AppRouter.login);
+            }
+          },
           child: const Text(
             'Masuk',
             style: TextStyle(

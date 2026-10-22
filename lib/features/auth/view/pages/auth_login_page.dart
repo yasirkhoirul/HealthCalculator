@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
+import '../../../../router/app_router.dart';
+import '../viewmodels/auth_view_models.dart';
 import '../widgets/auth_header_widget.dart';
 import '../widgets/auth_login_form_widget.dart';
 import '../widgets/auth_social_button_widget.dart';
-import 'auth_signup_page.dart';
 
-/// Pure UI Scaffold Page for StudyMap Auth Login.
-/// Handles only view and presentation logic without ViewModel/API integration.
+/// Scaffold Page for StudyMap Auth Login with ViewModel integration.
 class AuthLoginPage extends StatefulWidget {
   const AuthLoginPage({super.key});
 
@@ -15,8 +17,6 @@ class AuthLoginPage extends StatefulWidget {
 }
 
 class _AuthLoginPageState extends State<AuthLoginPage> {
-  bool _isLoading = false;
-
   void _showFeedback(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -33,28 +33,33 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
     );
   }
 
-  void _handleGoogleSignIn() {
-    setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showFeedback('Melanjutkan login dengan Google...');
-      }
-    });
+  Future<void> _handleGoogleSignIn() async {
+    final success = await context.read<AuthViewModel>().signInWithGoogle();
+    if (!mounted) return;
+    if (success) {
+      _showFeedback('Berhasil login dengan Google!');
+      context.goNamed(AppRouter.map);
+    } else {
+      final error = context.read<AuthViewModel>().errorMessage;
+      if (error != null) _showFeedback(error);
+    }
   }
 
-  void _handleEmailSubmit(String email) {
-    setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        _showFeedback('Tautan verifikasi dikirim ke $email');
-      }
-    });
+  Future<void> _handleEmailSubmit(String email) async {
+    final success = await context.read<AuthViewModel>().signInWithEmail(email);
+    if (!mounted) return;
+    if (success) {
+      _showFeedback('Berhasil masuk dengan email kampus!');
+      context.goNamed(AppRouter.map);
+    } else {
+      final error = context.read<AuthViewModel>().errorMessage;
+      if (error != null) _showFeedback(error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AuthViewModel>().isLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -68,8 +73,8 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
             size: 22,
           ),
           onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
+            if (context.canPop()) {
+              context.pop();
             } else {
               _showFeedback('Kembali ke layar sebelumnya');
             }
@@ -144,7 +149,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
 
                     // 2. Google Social Login Button
                     AuthSocialButtonWidget(
-                      isLoading: _isLoading,
+                      isLoading: isLoading,
                       onGoogleSignIn: _handleGoogleSignIn,
                     ),
 
@@ -152,7 +157,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
 
                     // 3. Campus Email Form & Submit Button
                     AuthLoginFormWidget(
-                      isLoading: _isLoading,
+                      isLoading: isLoading,
                       onEmailSubmit: _handleEmailSubmit,
                     ),
 
@@ -250,13 +255,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const AuthSignUpPage(),
-              ),
-            );
-          },
+          onTap: () => context.pushNamed(AppRouter.signup),
           child: const Text(
             'Daftar',
             style: TextStyle(
