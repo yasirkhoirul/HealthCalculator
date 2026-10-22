@@ -168,15 +168,15 @@ abstract class MockData {
   static const List<StudySpot> spots = [
     StudySpot(
       id: 'spot-1',
-      name: 'Main Campus Library',
-      category: 'Perpustakaan',
+      name: 'Main Campus Library Floor 2',
+      category: 'Library',
       campus: 'Universitas Indonesia',
       address: 'Gedung Crystal of Knowledge, Lt. 2-4',
       rating: 4.9,
       distanceMeters: 120,
       currentCapacity: 42,
       maxCapacity: 50,
-      facilities: ['WiFi 100 Mbps', 'AC Dingin', 'Stopkontak', 'Ruang Hening', 'Kafe'],
+      facilities: ['WiFi 100 Mbps', 'AC Dingin', 'Stopkontak Tiap Meja', 'Ruang Hening', 'Kafe Kopi'],
       isPopular: true,
       openingHours: '08:00 - 21:00 WIB',
       latitude: -6.3653,
@@ -184,7 +184,7 @@ abstract class MockData {
     ),
     StudySpot(
       id: 'spot-2',
-      name: 'Student Hub & Co-Study',
+      name: 'Student Hub & Coworking',
       category: 'Coworking',
       campus: 'Universitas Indonesia',
       address: 'Pusat Kegiatan Mahasiswa Lt. 1',
@@ -192,7 +192,7 @@ abstract class MockData {
       distanceMeters: 280,
       currentCapacity: 19,
       maxCapacity: 30,
-      facilities: ['WiFi Cepat', 'Papan Tulis', 'Bisa Diskusi', 'Bean Bag', 'Dispenser'],
+      facilities: ['WiFi Cepat', 'Papan Tulis Kaca', 'Bisa Diskusi', 'Bean Bag', 'Dispenser'],
       isPopular: true,
       openingHours: '08:00 - 22:00 WIB',
       latitude: -6.3670,
@@ -200,15 +200,15 @@ abstract class MockData {
     ),
     StudySpot(
       id: 'spot-3',
-      name: 'Kantin Kopi & Belajar',
-      category: 'Cafe Belajar',
+      name: 'Engineering Event & Study Hall',
+      category: 'Event/Meet',
       campus: 'Universitas Indonesia',
-      address: 'Fakultas Teknik UI, Area Boulevard',
+      address: 'Boulevard Fakultas Teknik UI',
       rating: 4.7,
       distanceMeters: 390,
-      currentCapacity: 24,
-      maxCapacity: 35,
-      facilities: ['Kopi & Snack', 'Semi-Outdoor', 'Stopkontak', 'Musik Santai'],
+      currentCapacity: 28,
+      maxCapacity: 40,
+      facilities: ['Proyektor', 'Audio Speaker', 'Stopkontak', 'Semi-Outdoor'],
       isPopular: false,
       openingHours: '09:00 - 20:00 WIB',
       latitude: -6.3685,
@@ -216,21 +216,33 @@ abstract class MockData {
     ),
     StudySpot(
       id: 'spot-4',
-      name: 'Gazebo Danau Kenanga',
-      category: 'Ruang Terbuka',
+      name: 'Vokasi Creative Coworking',
+      category: 'Coworking',
       campus: 'Universitas Indonesia',
-      address: 'Area Hijau Tepi Danau Rektorat',
+      address: 'Gedung Vokasi Lt. 3',
       rating: 4.6,
-      distanceMeters: 450,
-      currentCapacity: 8,
-      maxCapacity: 16,
-      facilities: ['Udara Segar', 'Meja Kayu', 'Pemandangan Danau', 'Suasana Tenang'],
+      distanceMeters: 510,
+      currentCapacity: 12,
+      maxCapacity: 25,
+      facilities: ['Colokan Banyak', 'Monitor Eksternal', 'AC Dingin', 'Sofa Santai'],
       isPopular: false,
-      openingHours: '24 Jam',
+      openingHours: '08:00 - 18:00 WIB',
       latitude: -6.3640,
       longitude: 106.8315,
     ),
   ];
+
+  static List<StudyBuddy> getBuddiesBySpot(String spotId) {
+    if (spotId == 'spot-1') {
+      return [buddies[0], buddies[1], buddies[2]];
+    } else if (spotId == 'spot-2') {
+      return [buddies[1], buddies[3]];
+    } else if (spotId == 'spot-3') {
+      return [buddies[2], buddies[3]];
+    } else {
+      return [buddies[0], buddies[3]];
+    }
+  }
 
   static const List<StudyBuddy> buddies = [
     StudyBuddy(

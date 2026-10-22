@@ -4,17 +4,17 @@ import '../../../../core/mock/mock_data.dart';
 /// ViewModel / Provider untuk Peta Interaktif Spot Belajar Kampus
 class StudyMapProvider extends ChangeNotifier {
   final List<String> _categories = const [
-    'Semua',
-    'Perpustakaan',
-    'Cafe Belajar',
+    'All Spot',
     'Coworking',
-    'Ruang Terbuka',
+    'Library',
+    'Event/Meet',
   ];
 
-  String _selectedCategory = 'Semua';
+  String _selectedCategory = 'All Spot';
   String _searchQuery = '';
   StudySpot? _selectedSpot;
   bool _isBottomSheetOpen = true;
+  bool _isExpanded = false;
 
   StudyMapProvider() {
     _selectedSpot = MockData.spots.isNotEmpty ? MockData.spots.first : null;
@@ -25,12 +25,13 @@ class StudyMapProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   StudySpot? get selectedSpot => _selectedSpot;
   bool get isBottomSheetOpen => _isBottomSheetOpen;
+  bool get isExpanded => _isExpanded;
 
   List<StudySpot> get allSpots => MockData.spots;
 
   List<StudySpot> get filteredSpots {
     return MockData.spots.where((spot) {
-      final matchesCategory = _selectedCategory == 'Semua' ||
+      final matchesCategory = _selectedCategory == 'All Spot' ||
           spot.category.toLowerCase() == _selectedCategory.toLowerCase();
       final matchesQuery = _searchQuery.isEmpty ||
           spot.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
@@ -40,6 +41,11 @@ class StudyMapProvider extends ChangeNotifier {
           );
       return matchesCategory && matchesQuery;
     }).toList();
+  }
+
+  List<StudyBuddy> get selectedSpotBuddies {
+    if (_selectedSpot == null) return const [];
+    return MockData.getBuddiesBySpot(_selectedSpot!.id);
   }
 
   void selectCategory(String category) {
@@ -58,6 +64,13 @@ class StudyMapProvider extends ChangeNotifier {
     _selectedSpot = spot;
     _isBottomSheetOpen = true;
     notifyListeners();
+  }
+
+  void setExpanded(bool expanded) {
+    if (_isExpanded != expanded) {
+      _isExpanded = expanded;
+      notifyListeners();
+    }
   }
 
   void toggleBottomSheet() {
