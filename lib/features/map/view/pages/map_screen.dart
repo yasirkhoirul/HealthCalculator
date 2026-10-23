@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
 import '../../../../core/mock/mock_data.dart';
-import '../../../../router/app_router.dart';
 import '../viewmodels/study_map_provider.dart';
 
 /// Halaman MapScreen lengkap dengan floating search bar, horizontal filter chips,
@@ -197,30 +197,30 @@ class _MapScreenState extends State<MapScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Stack(
-          children: [
-            // Canvas Denah Kampus Zenly-Style
-            CustomPaint(
-              size: Size.infinite,
-              painter: _CampusMapPainter(),
-            ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                // Canvas Denah Kampus Zenly-Style
+                CustomPaint(
+                  size: Size.infinite,
+                  painter: _CampusMapPainter(),
+                ),
 
-            // Marker Pin Spot Belajar Kampus
-            ...spots.asMap().entries.map((entry) {
-              final index = entry.key;
-              final spot = entry.value;
-              final isSelected = selectedSpot?.id == spot.id;
+                // Marker Pin Spot Belajar Kampus
+                ...spots.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final spot = entry.value;
+                  final isSelected = selectedSpot?.id == spot.id;
 
-              final positions = [
-                const Offset(0.32, 0.44), // Main Campus Library Floor 2
-                const Offset(0.68, 0.38), // Student Hub & Coworking
-                const Offset(0.48, 0.65), // Engineering Event Hall
-                const Offset(0.22, 0.68), // Vokasi Creative Coworking
-              ];
-              final pos = positions[index % positions.length];
+                  final positions = [
+                    const Offset(0.32, 0.44), // Main Campus Library Floor 2
+                    const Offset(0.68, 0.38), // Student Hub & Coworking
+                    const Offset(0.48, 0.65), // Engineering Event Hall
+                    const Offset(0.22, 0.68), // Vokasi Creative Coworking
+                  ];
+                  final pos = positions[index % positions.length];
 
-              return LayoutBuilder(
-                builder: (context, constraints) {
                   return Positioned(
                     left: constraints.maxWidth * pos.dx - 32,
                     top: constraints.maxHeight * pos.dy - 34,
@@ -235,14 +235,10 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   );
-                },
-              );
-            }),
+                }),
 
-            // Mock Student Presence Pins (Zenly-style)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Positioned(
+                // Mock Student Presence Pins (Zenly-style)
+                Positioned(
                   left: constraints.maxWidth * 0.42,
                   top: constraints.maxHeight * 0.40,
                   child: const _StudentAvatarPin(
@@ -251,12 +247,8 @@ class _MapScreenState extends State<MapScreen> {
                     statusTopic: 'Algoritma & Struktur Data',
                     statusColor: AppColors.activeGreen,
                   ),
-                );
-              },
-            ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return Positioned(
+                ),
+                Positioned(
                   left: constraints.maxWidth * 0.62,
                   top: constraints.maxHeight * 0.50,
                   child: const _StudentAvatarPin(
@@ -265,10 +257,10 @@ class _MapScreenState extends State<MapScreen> {
                     statusTopic: 'Figma UI/UX Design',
                     statusColor: AppColors.primary,
                   ),
-                );
-              },
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -301,7 +293,7 @@ class _MapScreenState extends State<MapScreen> {
             icon: Icons.add_home_work_rounded,
             tooltip: 'Buat Ruang Belajar Baru',
             isPrimary: true,
-            onPressed: () => context.pushNamed(AppRouter.createRoom),
+            onPressed: () => context.pushNamed(AppRoutes.createRoom),
           ),
         ],
       ),
@@ -710,7 +702,7 @@ class _MapScreenState extends State<MapScreen> {
                     child: OutlinedButton(
                       onPressed: () {
                         context.pushNamed(
-                          AppRouter.locationDetails,
+                          AppRoutes.locationDetails,
                           pathParameters: {'id': spot.id},
                         );
                       },
@@ -743,7 +735,7 @@ class _MapScreenState extends State<MapScreen> {
                             duration: const Duration(seconds: 1),
                           ),
                         );
-                        context.goNamed(AppRouter.session);
+                        context.goNamed(AppRoutes.session);
                       },
                       icon: const Icon(
                         Icons.flash_on_rounded,

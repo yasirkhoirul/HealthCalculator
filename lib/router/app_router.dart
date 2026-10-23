@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_calculator/features/auth/view/viewmodels/auth_view_models.dart';
+import 'package:health_calculator/router/app_router_redirect.dart';
+import 'package:health_calculator/router/app_routes.dart';
 import '../core/widgets/scaffold_with_nav_bar.dart';
 import '../features/auth/view/pages/auth_login_page.dart';
 import '../features/auth/view/pages/auth_signup_page.dart';
@@ -15,67 +18,41 @@ import '../stateWithMe.dart';
 /// Konfigurasi routing terpusat aplikasi StudyMap menggunakan GoRouter & StatefulShellRoute
 class AppRouter {
   // Navigator Keys
+  final AuthViewModel authViewModel;
+  AppRouter({required this.authViewModel});
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'rootNav');
 
-  // Route Names
-  static const String root = 'root';
-  static const String login = 'login';
-  static const String signup = 'signup';
-  static const String stateWithMe = 'state-with-me';
+  
 
-  // Main Shell Tab Route Names
-  static const String map = 'map';
-  static const String friends = 'friends';
-  static const String session = 'session';
-  static const String profile = 'profile';
-
-  // Sub-route Names
-  static const String locationDetails = 'locationDetails';
-  static const String createSchedule = 'createSchedule';
-  static const String createRoom = 'createRoom';
-
-  // Route Paths
-  static const String rootPath = '/';
-  static const String loginPath = '/login';
-  static const String signupPath = '/signup';
-  static const String stateWithMePath = '/state-with-me';
-
-  static const String mapPath = '/map';
-  static const String friendsPath = '/friends';
-  static const String sessionPath = '/session';
-  static const String profilePath = '/profile';
-
-  static const String locationDetailsPath = '/location-details/:id';
-  static const String createSchedulePath = '/create-schedule';
-  static const String createRoomPath = '/create-room';
-
-  static final GoRouter router = GoRouter(
+  late final GoRouter router = GoRouter(
+    redirect: AppRouterRedirect.redirect,
+    refreshListenable: authViewModel,
     navigatorKey: rootNavigatorKey,
-    initialLocation: loginPath,
+    initialLocation: AppRoutes.loginPath,
     routes: [
       // 1. Root redirect to Login
       GoRoute(
-        path: rootPath,
-        redirect: (_, __) => loginPath,
+        path: AppRoutes.rootPath,
+        redirect: (_, __) => AppRoutes.loginPath,
       ),
 
       // 2. Authentication Routes
       GoRoute(
-        path: loginPath,
-        name: login,
+        path: AppRoutes.loginPath,
+        name: AppRoutes.login,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AuthLoginPage(),
       ),
       GoRoute(
-        path: signupPath,
-        name: signup,
+        path: AppRoutes.signupPath,
+        name: AppRoutes.signup,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AuthSignUpPage(),
       ),
       GoRoute(
-        path: stateWithMePath,
-        name: stateWithMe,
+        path: AppRoutes.stateWithMePath,
+        name: AppRoutes.stateWithMe,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const StateWithMe(),
       ),
@@ -90,8 +67,8 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: mapPath,
-                name: map,
+                path: AppRoutes.mapPath,
+                name: AppRoutes.map,
                 builder: (context, state) => const MapPage(),
               ),
             ],
@@ -101,8 +78,8 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: friendsPath,
-                name: friends,
+                path: AppRoutes.friendsPath,
+                name: AppRoutes.friends,
                 builder: (context, state) => const FriendsPage(),
               ),
             ],
@@ -112,8 +89,8 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: sessionPath,
-                name: session,
+                path: AppRoutes.sessionPath,
+                name: AppRoutes.session,
                 builder: (context, state) => const SessionPage(),
               ),
             ],
@@ -123,8 +100,8 @@ class AppRouter {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: profilePath,
-                name: profile,
+                path: AppRoutes.profilePath,
+                name: AppRoutes.profile,
                 builder: (context, state) => const ProfilePage(),
               ),
             ],
@@ -134,8 +111,8 @@ class AppRouter {
 
       // 4. Sub-routes (Menimpa layar penuh / Tanpa Bottom Navigation Bar)
       GoRoute(
-        path: locationDetailsPath,
-        name: locationDetails,
+        path: AppRoutes.locationDetailsPath,
+        name: AppRoutes.locationDetails,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? 'spot-1';
@@ -143,14 +120,14 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: createSchedulePath,
-        name: createSchedule,
+        path: AppRoutes.createSchedulePath,
+        name: AppRoutes.createSchedule,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreateSchedulePage(),
       ),
       GoRoute(
-        path: createRoomPath,
-        name: createRoom,
+        path: AppRoutes.createRoomPath,
+        name: AppRoutes.createRoom,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreateRoomPage(),
       ),

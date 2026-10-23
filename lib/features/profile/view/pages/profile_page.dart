@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_calculator/features/auth/view/viewmodels/auth_view_models.dart';
+import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../../../../router/app_router.dart';
 import '../viewmodels/profile_provider.dart';
 
 /// Tab 4: Pengaturan / Profil Mahasiswa
@@ -293,7 +294,7 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.pushNamed(AppRouter.createRoom),
+                  onTap: () => context.pushNamed(AppRoutes.createRoom),
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 16),
                 ListTile(
@@ -318,7 +319,7 @@ class ProfilePage extends StatelessWidget {
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.pushNamed(AppRouter.createSchedule),
+                  onTap: () => context.pushNamed(AppRoutes.createSchedule),
                 ),
               ],
             ),
@@ -329,13 +330,14 @@ class ProfilePage extends StatelessWidget {
           // 4. Logout Button
           OutlinedButton.icon(
             onPressed: () {
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Berhasil keluar dari akun StudyMap'),
                   duration: Duration(seconds: 1),
                 ),
               );
-              context.goNamed(AppRouter.login);
+              context.read<AuthViewModel>().signOut();
             },
             icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
             label: const Text(

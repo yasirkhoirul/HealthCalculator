@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../../../../router/app_router.dart';
 import '../viewmodels/session_timer_provider.dart';
 
 /// Tab 3: Active Session (Sesi Fokus Belajar & Timer Melingkar)
@@ -323,7 +323,7 @@ class SessionPage extends StatelessWidget {
                         ),
                       ),
                       TextButton.icon(
-                        onPressed: () => context.pushNamed(AppRouter.createSchedule),
+                        onPressed: () => context.pushNamed(AppRoutes.createSchedule),
                         icon: const Icon(Icons.add_rounded, size: 16),
                         label: const Text('Jadwal Baru'),
                         style: TextButton.styleFrom(

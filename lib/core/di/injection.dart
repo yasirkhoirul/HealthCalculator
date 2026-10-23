@@ -6,6 +6,7 @@ import '../../features/map/view/viewmodels/study_map_provider.dart';
 import '../../features/profile/view/viewmodels/profile_provider.dart';
 import '../../features/session/view/viewmodels/session_timer_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../../router/app_router.dart';
 
 final locator = GetIt.instance;
 
@@ -14,7 +15,7 @@ void setupLocator() {
   locator.registerLazySingleton<AuthRemoteSource>(() => AuthRemoteSource());
 
   // 2. ViewModels / Providers
-  locator.registerFactory<AuthViewModel>(
+  locator.registerLazySingleton<AuthViewModel>(
     () => AuthViewModel(locator<AuthRemoteSource>()),
   );
 
@@ -23,4 +24,9 @@ void setupLocator() {
   locator.registerLazySingleton<SessionTimerProvider>(() => SessionTimerProvider());
   locator.registerLazySingleton<FriendsProvider>(() => FriendsProvider());
   locator.registerLazySingleton<ProfileProvider>(() => ProfileProvider());
+
+  // 3. Router
+  locator.registerLazySingleton<AppRouter>(
+    () => AppRouter(authViewModel: locator<AuthViewModel>()),
+  );
 }

@@ -33,7 +33,7 @@ class MainApp extends StatelessWidget {
       child: MaterialApp.router(
         title: 'StudyMap',
         debugShowCheckedModeBanner: false,
-        routerConfig: AppRouter.router,
+        routerConfig: locator<AppRouter>().router,
         theme: ThemeData(
           useMaterial3: true,
           scaffoldBackgroundColor: AppColors.background,

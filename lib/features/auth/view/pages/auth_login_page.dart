@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/constant/app_auth_state.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../../../../router/app_router.dart';
+import '../../../../router/app_routes.dart';
 import '../viewmodels/auth_view_models.dart';
 import '../widgets/auth_header_widget.dart';
 import '../widgets/auth_login_form_widget.dart';
@@ -34,32 +35,39 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    final success = await context.read<AuthViewModel>().signInWithGoogle();
+    final vm = context.read<AuthViewModel>();
+    await vm.signInWithGoogle();
     if (!mounted) return;
-    if (success) {
-      _showFeedback('Berhasil login dengan Google!');
-      context.goNamed(AppRouter.map);
-    } else {
-      final error = context.read<AuthViewModel>().errorMessage;
-      if (error != null) _showFeedback(error);
+
+    switch (vm.stateLogin) {
+      case AppAuthStateSuccess():
+        _showFeedback('Berhasil login dengan Google!');
+      case AppAuthStateError(:final message):
+        _showFeedback(message);
+      default:
+        break;
     }
   }
 
   Future<void> _handleEmailSubmit(String email) async {
-    final success = await context.read<AuthViewModel>().signInWithEmail(email);
+    final vm = context.read<AuthViewModel>();
+    await vm.signInWithEmail(email);
     if (!mounted) return;
-    if (success) {
-      _showFeedback('Berhasil masuk dengan email kampus!');
-      context.goNamed(AppRouter.map);
-    } else {
-      final error = context.read<AuthViewModel>().errorMessage;
-      if (error != null) _showFeedback(error);
+
+    switch (vm.stateLogin) {
+      case AppAuthStateSuccess():
+        _showFeedback('Berhasil masuk dengan email kampus!');
+      case AppAuthStateError(:final message):
+        _showFeedback(message);
+      default:
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthViewModel>().isLoading;
+    final authState = context.watch<AuthViewModel>().stateLogin;
+    final isLoading = authState is AppAuthStateLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -255,7 +263,7 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
           ),
         ),
         GestureDetector(
-          onTap: () => context.pushNamed(AppRouter.signup),
+          onTap: () => context.pushNamed(AppRoutes.signup),
           child: const Text(
             'Daftar',
             style: TextStyle(

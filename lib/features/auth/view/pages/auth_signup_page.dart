@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/constant/app_auth_state.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../../../../router/app_router.dart';
+import '../../../../router/app_routes.dart';
 import '../viewmodels/auth_view_models.dart';
 import '../widgets/auth_signup_form_widget.dart';
 import '../widgets/auth_social_button_widget.dart';
@@ -33,40 +34,51 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
   }
 
   Future<void> _handleGoogleSignUp() async {
-    final success = await context.read<AuthViewModel>().signInWithGoogle();
+    final vm = context.read<AuthViewModel>();
+    await vm.signInWithGoogle();
     if (!mounted) return;
-    if (success) {
-      _showFeedback('Melanjutkan pendaftaran dengan Google...');
-    } else {
-      final error = context.read<AuthViewModel>().errorMessage;
-      if (error != null) _showFeedback(error);
+
+    switch (vm.stateLogin) {
+      case AppAuthStateSuccess():
+        _showFeedback('Pendaftaran dengan Google berhasil!');
+        context.goNamed(AppRoutes.map);
+      case AppAuthStateError(:final message):
+        _showFeedback(message);
+      default:
+        break;
     }
   }
 
-  Future<void> _handleSignUpSubmit() async {
-    final success = await context.read<AuthViewModel>().signUpWithEmail(
-      name: '',
-      email: '',
-      password: '',
-      campus: '',
+  Future<void> _handleSignUpSubmit({
+    required String name,
+    required String email,
+    required String campus,
+    required String password,
+  }) async {
+    final vm = context.read<AuthViewModel>();
+    await vm.signUpWithEmail(
+      name: name,
+      email: email,
+      campus: campus,
+      password: password,
     );
     if (!mounted) return;
-    if (success) {
-      _showFeedback('Akun berhasil dibuat! Silakan masuk.');
-      if (context.canPop()) {
-        context.pop();
-      } else {
-        context.goNamed(AppRouter.login);
-      }
-    } else {
-      final error = context.read<AuthViewModel>().errorMessage;
-      if (error != null) _showFeedback(error);
+
+    switch (vm.stateLogin) {
+      case AppAuthStateSuccess():
+        _showFeedback('Akun berhasil dibuat! Mengarahkan ke peta...');
+        context.goNamed(AppRoutes.map);
+      case AppAuthStateError(:final message):
+        _showFeedback(message);
+      default:
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthViewModel>().isLoading;
+    final authState = context.watch<AuthViewModel>().stateLogin;
+    final isLoading = authState is AppAuthStateLoading;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -83,7 +95,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.goNamed(AppRouter.login);
+              context.goNamed(AppRoutes.login);
             }
           },
         ),
@@ -182,7 +194,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
                     // Sign Up Form
                     AuthSignUpFormWidget(
                       isLoading: isLoading,
-                      onSignUpSuccess: _handleSignUpSubmit,
+                      onSubmit: _handleSignUpSubmit,
                     ),
 
                     const SizedBox(height: 20),
@@ -267,7 +279,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.goNamed(AppRouter.login);
+              context.goNamed(AppRoutes.login);
             }
           },
           child: const Text(

@@ -5,12 +5,18 @@ import '../../../../core/widgets/app_text_field.dart';
 
 /// Pure UI Form widget for StudyMap Sign Up / Registration.
 class AuthSignUpFormWidget extends StatefulWidget {
-  final VoidCallback? onSignUpSuccess;
+  /// Dipanggil hanya jika seluruh field valid.
+  final void Function({
+    required String name,
+    required String email,
+    required String campus,
+    required String password,
+  })? onSubmit;
   final bool isLoading;
 
   const AuthSignUpFormWidget({
     super.key,
-    this.onSignUpSuccess,
+    this.onSubmit,
     this.isLoading = false,
   });
 
@@ -49,7 +55,12 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
 
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      widget.onSignUpSuccess?.call();
+      widget.onSubmit?.call(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        campus: _campusController.text.trim(),
+        password: _passwordController.text,
+      );
     }
   }
 

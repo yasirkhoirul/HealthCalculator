@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
 import '../../../../core/mock/mock_data.dart';
-import '../../../../router/app_router.dart';
 import '../viewmodels/friends_provider.dart';
 
 /// Tab 2: Temukan Teman / Explore Study Buddies
@@ -34,7 +34,7 @@ class FriendsPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
             tooltip: 'Buat Jadwal Belajar',
-            onPressed: () => context.pushNamed(AppRouter.createSchedule),
+            onPressed: () => context.pushNamed(AppRoutes.createSchedule),
           ),
           const SizedBox(width: 8),
         ],
