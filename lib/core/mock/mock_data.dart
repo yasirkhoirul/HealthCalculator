@@ -1,5 +1,9 @@
 library;
 
+import '../../features/profile/data/models/user_profile_model.dart';
+
+export '../../features/profile/data/models/user_profile_model.dart';
+
 /// Model dan data tiruan (Mock Data) untuk StudyMap / HangoutMap.
 /// Berfungsi sebagai data realistis sebelum integrasi backend API/Firebase.
 
@@ -108,61 +112,6 @@ class StudySchedule {
   });
 }
 
-class UserProfile {
-  final String id;
-  final String name;
-  final String nim;
-  final String campus;
-  final String major;
-  final String email;
-  final double totalFocusHours;
-  final int completedSessions;
-  final int connectedBuddies;
-  final bool isGhostMode;
-  final String focusPreference;
-
-  const UserProfile({
-    required this.id,
-    required this.name,
-    required this.nim,
-    required this.campus,
-    required this.major,
-    required this.email,
-    required this.totalFocusHours,
-    required this.completedSessions,
-    required this.connectedBuddies,
-    this.isGhostMode = false,
-    required this.focusPreference,
-  });
-
-  UserProfile copyWith({
-    String? name,
-    String? nim,
-    String? campus,
-    String? major,
-    String? email,
-    double? totalFocusHours,
-    int? completedSessions,
-    int? connectedBuddies,
-    bool? isGhostMode,
-    String? focusPreference,
-  }) {
-    return UserProfile(
-      id: id,
-      name: name ?? this.name,
-      nim: nim ?? this.nim,
-      campus: campus ?? this.campus,
-      major: major ?? this.major,
-      email: email ?? this.email,
-      totalFocusHours: totalFocusHours ?? this.totalFocusHours,
-      completedSessions: completedSessions ?? this.completedSessions,
-      connectedBuddies: connectedBuddies ?? this.connectedBuddies,
-      isGhostMode: isGhostMode ?? this.isGhostMode,
-      focusPreference: focusPreference ?? this.focusPreference,
-    );
-  }
-}
-
 /// Kumpulan Data Tiruan (Mock Repository)
 abstract class MockData {
   static const List<StudySpot> spots = [
@@ -170,8 +119,8 @@ abstract class MockData {
       id: 'spot-1',
       name: 'Main Campus Library Floor 2',
       category: 'Library',
-      campus: 'Universitas Indonesia',
-      address: 'Gedung Crystal of Knowledge, Lt. 2-4',
+      campus: 'Universitas Ahmad Dahlan',
+      address: 'Gedung Utama Kampus 4 UAD, Lt. 2-4',
       rating: 4.9,
       distanceMeters: 120,
       currentCapacity: 42,
@@ -186,8 +135,8 @@ abstract class MockData {
       id: 'spot-2',
       name: 'Student Hub & Coworking',
       category: 'Coworking',
-      campus: 'Universitas Indonesia',
-      address: 'Pusat Kegiatan Mahasiswa Lt. 1',
+      campus: 'Universitas Ahmad Dahlan',
+      address: 'Pusat Kegiatan Mahasiswa Kampus 4 UAD',
       rating: 4.8,
       distanceMeters: 280,
       currentCapacity: 19,
@@ -202,8 +151,8 @@ abstract class MockData {
       id: 'spot-3',
       name: 'Engineering Event & Study Hall',
       category: 'Event/Meet',
-      campus: 'Universitas Indonesia',
-      address: 'Boulevard Fakultas Teknik UI',
+      campus: 'Universitas Ahmad Dahlan',
+      address: 'Boulevard Fakultas Teknologi Industri UAD',
       rating: 4.7,
       distanceMeters: 390,
       currentCapacity: 28,
@@ -218,8 +167,8 @@ abstract class MockData {
       id: 'spot-4',
       name: 'Vokasi Creative Coworking',
       category: 'Coworking',
-      campus: 'Universitas Indonesia',
-      address: 'Gedung Vokasi Lt. 3',
+      campus: 'Universitas Ahmad Dahlan',
+      address: 'Gedung Lab Terpadu Kampus 4 UAD',
       rating: 4.6,
       distanceMeters: 510,
       currentCapacity: 12,
@@ -249,8 +198,8 @@ abstract class MockData {
       id: 'buddy-1',
       name: 'Alif Fathur R.',
       avatarInitials: 'AF',
-      campus: 'UI',
-      major: 'Ilmu Komputer 2021',
+      campus: 'UAD',
+      major: 'Informatika 2021',
       semester: 'Semester 7',
       currentStudyTopic: 'Belajar Algoritma & Struktur Data',
       isOnline: true,
@@ -261,7 +210,7 @@ abstract class MockData {
       id: 'buddy-2',
       name: 'Sarah Jenkins',
       avatarInitials: 'SJ',
-      campus: 'UI',
+      campus: 'UAD',
       major: 'Sistem Informasi 2022',
       semester: 'Semester 5',
       currentStudyTopic: 'UI/UX Design di Figma',
@@ -273,7 +222,7 @@ abstract class MockData {
       id: 'buddy-3',
       name: 'Dimas Prasetyo',
       avatarInitials: 'DP',
-      campus: 'UI',
+      campus: 'UAD',
       major: 'Teknik Elektro 2020',
       semester: 'Semester 7',
       currentStudyTopic: 'Persiapan Ujian Kalkulus II',
@@ -285,7 +234,7 @@ abstract class MockData {
       id: 'buddy-4',
       name: 'Nadia Safitri',
       avatarInitials: 'NS',
-      campus: 'UI',
+      campus: 'UAD',
       major: 'Manajemen Bisnis 2023',
       semester: 'Semester 3',
       currentStudyTopic: 'Analisis Studi Kasus Pemasaran',
@@ -302,7 +251,7 @@ abstract class MockData {
         id: 'buddy-5',
         name: 'Rian Pratama',
         avatarInitials: 'RP',
-        campus: 'UI',
+        campus: 'UAD',
         major: 'Teknik Komputer 2022',
         semester: 'Semester 5',
         currentStudyTopic: 'Pemrograman Web Lanjut',
@@ -320,7 +269,7 @@ abstract class MockData {
         id: 'buddy-6',
         name: 'Clara Devina',
         avatarInitials: 'CD',
-        campus: 'UI',
+        campus: 'UAD',
         major: 'Statistika 2022',
         semester: 'Semester 5',
         currentStudyTopic: 'Analisis Regresi Data',
@@ -358,15 +307,22 @@ abstract class MockData {
   ];
 
   static const UserProfile currentUser = UserProfile(
-    id: 'user-me',
-    name: 'Raihan Ridho Mubarok',
-    nim: '2106081234',
-    campus: 'Universitas Indonesia',
-    major: 'Teknik Informatika (S1)',
-    email: 'raihan.ridho@ui.ac.id',
-    totalFocusHours: 48.5,
+    id: 'user-farhan',
+    name: 'Ahmad Farhan',
+    username: '@farhan_study',
+    nim: '13521001',
+    campus: 'Institut Teknologi Bandung (ITB)',
+    campusBranch: 'ITB Kampus Ganesha',
+    major: 'Teknik Informatika',
+    academicYear: '2023',
+    email: 'ahmad.farhan@itb.ac.id',
+    bio: 'Fokus persiapan UAS & mobile dev. Selalu cari teman ngoding di perpus!',
+    interests: ['Flutter', 'System Design', 'Calculus'],
+    isMapVisible: true,
+    photoUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80',
+    totalFocusHours: 48.0,
     completedSessions: 32,
-    connectedBuddies: 18,
+    connectedBuddies: 14,
     isGhostMode: false,
     focusPreference: 'Suasana Tenang (Deep Focus)',
   );

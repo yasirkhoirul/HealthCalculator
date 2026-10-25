@@ -55,19 +55,23 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = AppColors.surfaceOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimaryColor),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Buat Jadwal Belajar',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimaryColor,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -81,21 +85,21 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Judul
-              const Text(
+              Text(
                 'Nama Sesi Belajar',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _titleController,
                 hintText: 'Contoh: Persiapan Ujian Tengah Semester',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.menu_book_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -104,21 +108,21 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               const SizedBox(height: 16),
 
               // 2. Mata Kuliah
-              const Text(
+              Text(
                 'Mata Kuliah / Topik',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _subjectController,
                 hintText: 'Contoh: Rekayasa Perangkat Lunak',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.category_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -127,21 +131,21 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               const SizedBox(height: 16),
 
               // 3. Waktu & Jam
-              const Text(
+              Text(
                 'Jam Pelaksanaan',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _timeController,
                 hintText: '15:30 - 17:30 WIB',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.access_time_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -150,21 +154,21 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               const SizedBox(height: 16),
 
               // 4. Lokasi
-              const Text(
+              Text(
                 'Lokasi Spot Kampus',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _locationController,
                 hintText: 'Pilih perpustakaan atau coworking',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.location_on_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -173,21 +177,21 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               const SizedBox(height: 16),
 
               // 5. Catatan
-              const Text(
+              Text(
                 'Catatan Tambahan (Opsional)',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _noteController,
                 hintText: 'Contoh: Bawa laptop dan materi modul bab 3',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.notes_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
               ),

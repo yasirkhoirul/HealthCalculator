@@ -10,9 +10,9 @@ class AuthRemoteSource {
     await Future<void>.delayed(const Duration(milliseconds: 600));
     return const AuthUserModel(
       id: 'user-me',
-      name: 'Raihan Ridho Mubarok',
-      email: 'raihan.ridho@ui.ac.id',
-      campus: 'Universitas Indonesia',
+      name: 'Raihan',
+      email: 'raihan@uad.ac.id',
+      campus: 'Universitas Ahmad Dahlan',
       nim: '2106081234',
       major: 'Teknik Informatika (S1)',
       isEmailVerified: true,
@@ -24,9 +24,9 @@ class AuthRemoteSource {
     await Future<void>.delayed(const Duration(milliseconds: 600));
     return AuthUserModel(
       id: 'user-${email.hashCode}',
-      name: email.split('@').first,
+      name: email.split('@').first.isEmpty ? 'Raihan' : email.split('@').first,
       email: email,
-      campus: 'Universitas Indonesia',
+      campus: 'Universitas Ahmad Dahlan',
       isEmailVerified: true,
     );
   }
@@ -41,9 +41,9 @@ class AuthRemoteSource {
     await Future<void>.delayed(const Duration(milliseconds: 600));
     return AuthUserModel(
       id: 'user-${email.hashCode}',
-      name: name.isEmpty ? email.split('@').first : name,
+      name: name.isEmpty ? 'Raihan' : name,
       email: email,
-      campus: campus.isEmpty ? 'Universitas Indonesia' : campus,
+      campus: campus.isEmpty ? 'Universitas Ahmad Dahlan' : campus,
     );
   }
 }

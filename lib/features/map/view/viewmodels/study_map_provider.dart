@@ -75,11 +75,15 @@ class StudyMapProvider extends ChangeNotifier {
 
   void toggleBottomSheet() {
     _isBottomSheetOpen = !_isBottomSheetOpen;
+    if (!_isBottomSheetOpen) {
+      _selectedSpot = null;
+    }
     notifyListeners();
   }
 
   void closeBottomSheet() {
     _isBottomSheetOpen = false;
+    _selectedSpot = null;
     notifyListeners();
   }
 

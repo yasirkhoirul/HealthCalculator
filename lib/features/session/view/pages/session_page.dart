@@ -14,16 +14,28 @@ class SessionPage extends StatelessWidget {
     final timerProvider = context.watch<SessionTimerProvider>();
     final isRunning = timerProvider.isRunning;
 
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final primaryLightColor = AppColors.primaryLightOf(context);
+    final successLightColor = AppColors.isDark(context)
+        ? AppColors.darkSuccessLight
+        : AppColors.successLight;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
-        title: const Text(
+        title: Text(
           'Active Session',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimaryColor,
             fontSize: 19,
             fontWeight: FontWeight.w800,
           ),
@@ -33,7 +45,7 @@ class SessionPage extends StatelessWidget {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: isRunning ? AppColors.successLight : AppColors.primaryLight,
+              color: isRunning ? successLightColor : primaryLightColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -43,7 +55,7 @@ class SessionPage extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: isRunning ? AppColors.successGreen : AppColors.primary,
+                    color: isRunning ? AppColors.successGreen : primaryColor,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -55,7 +67,7 @@ class SessionPage extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: isRunning
                         ? AppColors.successGreen
-                        : AppColors.primary,
+                        : primaryColor,
                   ),
                 ),
               ],
@@ -64,7 +76,7 @@ class SessionPage extends StatelessWidget {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.borderSubtle, height: 1),
+          child: Container(color: borderSubtleColor, height: 1),
         ),
       ),
       body: SingleChildScrollView(
@@ -75,9 +87,9 @@ class SessionPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderSubtle),
+                border: Border.all(color: borderSubtleColor),
               ),
               child: Row(
                 children: [
@@ -85,12 +97,12 @@ class SessionPage extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
+                      color: primaryLightColor,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.track_changes_rounded,
-                      color: AppColors.primary,
+                      color: primaryColor,
                       size: 24,
                     ),
                   ),
@@ -101,10 +113,10 @@ class SessionPage extends StatelessWidget {
                       children: [
                         Text(
                           timerProvider.sessionTitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: textPrimaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -112,17 +124,17 @@ class SessionPage extends StatelessWidget {
                         const SizedBox(height: 2),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.location_on_outlined,
                               size: 14,
-                              color: AppColors.textSecondary,
+                              color: textSecondaryColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               timerProvider.currentSpotName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: textSecondaryColor,
                               ),
                             ),
                           ],
@@ -137,7 +149,7 @@ class SessionPage extends StatelessWidget {
             const SizedBox(height: 28),
 
             // 2. Circular Timer Ring
-            _buildCircularTimer(timerProvider),
+            _buildCircularTimer(context, timerProvider),
 
             const SizedBox(height: 28),
 
@@ -146,6 +158,7 @@ class SessionPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildPresetChip(
+                  context: context,
                   minutes: 25,
                   label: '25 Min (Pomodoro)',
                   isSelected: timerProvider.totalSeconds == 25 * 60,
@@ -153,6 +166,7 @@ class SessionPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _buildPresetChip(
+                  context: context,
                   minutes: 45,
                   label: '45 Min (Sprint)',
                   isSelected: timerProvider.totalSeconds == 45 * 60,
@@ -160,6 +174,7 @@ class SessionPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _buildPresetChip(
+                  context: context,
                   minutes: 60,
                   label: '60 Min (Deep)',
                   isSelected: timerProvider.totalSeconds == 60 * 60,
@@ -179,8 +194,8 @@ class SessionPage extends StatelessWidget {
                   icon: const Icon(Icons.refresh_rounded, size: 20),
                   label: const Text('Reset'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.border),
+                    foregroundColor: textSecondaryColor,
+                    side: BorderSide(color: borderColor),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -221,7 +236,7 @@ class SessionPage extends StatelessWidget {
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: primaryColor,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -241,9 +256,9 @@ class SessionPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.borderSubtle),
+                border: Border.all(color: borderSubtleColor),
               ),
               child: Row(
                 children: [
@@ -252,8 +267,8 @@ class SessionPage extends StatelessWidget {
                     height: 38,
                     decoration: BoxDecoration(
                       color: timerProvider.isGhostMode
-                          ? AppColors.primaryLight
-                          : AppColors.cardSubtleBg,
+                          ? primaryLightColor
+                          : AppColors.cardSubtleBgOf(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -261,13 +276,13 @@ class SessionPage extends StatelessWidget {
                           ? Icons.visibility_off_rounded
                           : Icons.visibility_rounded,
                       color: timerProvider.isGhostMode
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
+                          ? primaryColor
+                          : textSecondaryColor,
                       size: 20,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -276,14 +291,14 @@ class SessionPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                            color: textPrimaryColor,
                           ),
                         ),
                         Text(
                           'Sembunyikan titik lokasimu dari peta kampus',
                           style: TextStyle(
                             fontSize: 11.5,
-                            color: AppColors.textSecondary,
+                            color: textSecondaryColor,
                           ),
                         ),
                       ],
@@ -291,7 +306,7 @@ class SessionPage extends StatelessWidget {
                   ),
                   Switch.adaptive(
                     value: timerProvider.isGhostMode,
-                    activeTrackColor: AppColors.primary,
+                    activeTrackColor: primaryColor,
                     onChanged: (_) => timerProvider.toggleGhostMode(),
                   ),
                 ],
@@ -304,9 +319,9 @@ class SessionPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.borderSubtle),
+                border: Border.all(color: borderSubtleColor),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,12 +329,12 @@ class SessionPage extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Rekan di Sesi Ini',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: textPrimaryColor,
                         ),
                       ),
                       TextButton.icon(
@@ -327,7 +342,7 @@ class SessionPage extends StatelessWidget {
                         icon: const Icon(Icons.add_rounded, size: 16),
                         label: const Text('Jadwal Baru'),
                         style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: primaryColor,
                           padding: EdgeInsets.zero,
                           textStyle: const TextStyle(fontSize: 12),
                         ),
@@ -343,11 +358,11 @@ class SessionPage extends StatelessWidget {
                           children: [
                             CircleAvatar(
                               radius: 18,
-                              backgroundColor: AppColors.primaryLight,
+                              backgroundColor: primaryLightColor,
                               child: Text(
                                 buddy.avatarInitials,
-                                style: const TextStyle(
-                                  color: AppColors.primary,
+                                style: TextStyle(
+                                  color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -356,9 +371,9 @@ class SessionPage extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               buddy.name.split(' ').first,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textBody,
+                                color: textBodyColor,
                               ),
                             ),
                           ],
@@ -375,7 +390,7 @@ class SessionPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCircularTimer(SessionTimerProvider timer) {
+  Widget _buildCircularTimer(BuildContext context, SessionTimerProvider timer) {
     return Center(
       child: SizedBox(
         width: 220,
@@ -391,7 +406,7 @@ class SessionPage extends StatelessWidget {
                 value: 1.0,
                 strokeWidth: 14,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryLight.withValues(alpha: 0.6),
+                  AppColors.primaryLightOf(context).withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -414,19 +429,19 @@ class SessionPage extends StatelessWidget {
               children: [
                 Text(
                   timer.formattedTime,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 44,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -1.0,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimaryOf(context),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   timer.isRunning ? 'Sisa Waktu' : 'Waktu Siap',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondaryOf(context),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -439,21 +454,23 @@ class SessionPage extends StatelessWidget {
   }
 
   Widget _buildPresetChip({
+    required BuildContext context,
     required int minutes,
     required String label,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final primaryColor = AppColors.primaryOf(context);
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected ? primaryColor : AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? primaryColor : AppColors.borderOf(context),
           ),
         ),
         child: Text(
@@ -461,7 +478,7 @@ class SessionPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : AppColors.textBody,
+            color: isSelected ? Colors.white : AppColors.textBodyOf(context),
           ),
         ),
       ),

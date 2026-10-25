@@ -32,10 +32,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
       body: navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: const Border(
+          color: AppColors.surfaceOf(context),
+          border: Border(
             top: BorderSide(
-              color: AppColors.borderSubtle,
+              color: AppColors.borderSubtleOf(context),
               width: 1,
             ),
           ),
@@ -108,8 +108,8 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = AppColors.primary;
-    final inactiveColor = AppColors.textMuted;
+    final activeColor = AppColors.primaryOf(context);
+    final inactiveColor = AppColors.textMutedOf(context);
 
     return InkWell(
       onTap: onTap,
@@ -121,7 +121,7 @@ class _NavBarItem extends StatelessWidget {
           vertical: 6,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryLight : Colors.transparent,
+          color: isSelected ? AppColors.primaryLightOf(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(

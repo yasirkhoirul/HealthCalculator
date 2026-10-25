@@ -3,8 +3,9 @@ import '../../features/auth/data/source/auth_remote_source.dart';
 import '../../features/auth/view/viewmodels/auth_view_models.dart';
 import '../../features/friends/view/viewmodels/friends_provider.dart';
 import '../../features/map/view/viewmodels/study_map_provider.dart';
-import '../../features/profile/view/viewmodels/profile_provider.dart';
+import '../../features/profile/view/viewmodels/profile_viewmodel.dart';
 import '../../features/session/view/viewmodels/session_timer_provider.dart';
+import '../../features/settings/view/viewmodels/theme_viewmodel.dart';
 import '../providers/navigation_provider.dart';
 import '../../router/app_router.dart';
 
@@ -23,7 +24,8 @@ void setupLocator() {
   locator.registerLazySingleton<StudyMapProvider>(() => StudyMapProvider());
   locator.registerLazySingleton<SessionTimerProvider>(() => SessionTimerProvider());
   locator.registerLazySingleton<FriendsProvider>(() => FriendsProvider());
-  locator.registerLazySingleton<ProfileProvider>(() => ProfileProvider());
+  locator.registerLazySingleton<ProfileViewModel>(() => ProfileViewModel());
+  locator.registerLazySingleton<ThemeViewModel>(() => ThemeViewModel());
 
   // 3. Router
   locator.registerLazySingleton<AppRouter>(

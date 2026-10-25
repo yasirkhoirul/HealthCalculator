@@ -33,7 +33,7 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? AppColors.primary;
+    final effectiveBgColor = backgroundColor ?? AppColors.primaryOf(context);
 
     return SizedBox(
       width: width,

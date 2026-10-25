@@ -9,8 +9,10 @@ import '../features/auth/view/pages/auth_signup_page.dart';
 import '../features/friends/view/pages/friends_page.dart';
 import '../features/map/view/pages/location_details_page.dart';
 import '../features/map/view/pages/map_page.dart';
+import '../features/profile/view/pages/edit_profile_page.dart';
 import '../features/profile/view/pages/profile_page.dart';
 import '../features/session/view/pages/session_page.dart';
+import '../features/settings/view/pages/settings_main_page.dart';
 import '../features/study/view/pages/create_room_page.dart';
 import '../features/study/view/pages/create_schedule_page.dart';
 import '../stateWithMe.dart';
@@ -130,6 +132,18 @@ class AppRouter {
         name: AppRoutes.createRoom,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreateRoomPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.settingsPath,
+        name: AppRoutes.settings,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const SettingsMainPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfilePath,
+        name: AppRoutes.editProfile,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const EditProfilePage(),
       ),
     ],
   );

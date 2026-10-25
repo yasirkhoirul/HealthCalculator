@@ -16,23 +16,30 @@ class FriendsPage extends StatelessWidget {
     final requests = friendsProvider.requests;
     final buddies = friendsProvider.buddies;
 
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
-        title: const Text(
+        title: Text(
           'Temukan Rekan Belajar',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimaryColor,
             fontSize: 19,
             fontWeight: FontWeight.w800,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+            icon: Icon(Icons.calendar_month_rounded, color: primaryColor),
             tooltip: 'Buat Jadwal Belajar',
             onPressed: () => context.pushNamed(AppRoutes.createSchedule),
           ),
@@ -40,7 +47,7 @@ class FriendsPage extends StatelessWidget {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.borderSubtle, height: 1),
+          child: Container(color: borderSubtleColor, height: 1),
         ),
       ),
       body: ListView(
@@ -49,25 +56,29 @@ class FriendsPage extends StatelessWidget {
           // 1. Search Bar
           Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: borderColor),
             ),
             child: TextField(
               onChanged: friendsProvider.updateSearchQuery,
-              decoration: const InputDecoration(
+              style: TextStyle(
+                fontSize: 14,
+                color: textPrimaryColor,
+              ),
+              decoration: InputDecoration(
                 hintText: 'Cari nama rekan, jurusan, atau mata kuliah...',
                 hintStyle: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textMuted,
+                  color: AppColors.textMutedOf(context),
                 ),
                 prefixIcon: Icon(
                   Icons.search_rounded,
-                  color: AppColors.primary,
+                  color: primaryColor,
                   size: 22,
                 ),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 14,
                 ),
@@ -81,19 +92,19 @@ class FriendsPage extends StatelessWidget {
           if (requests.isNotEmpty) ...[
             Row(
               children: [
-                const Text(
+                Text(
                   'Permintaan Belajar Bareng',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: textPrimaryColor,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: primaryColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -118,19 +129,19 @@ class FriendsPage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Rekan Belajar Sekitar Kampus',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               Text(
                 '${buddies.length} Mahasiswa Aktif',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -153,13 +164,18 @@ class FriendsPage extends StatelessWidget {
     StudyRequest request,
     FriendsProvider provider,
   ) {
+    final primaryColor = AppColors.primaryOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardSubtleBg,
+        color: AppColors.cardSubtleBgOf(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primaryBorder),
+        border: Border.all(color: AppColors.primaryBorderOf(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +184,7 @@ class FriendsPage extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.primary,
+                backgroundColor: primaryColor,
                 child: Text(
                   request.sender.avatarInitials,
                   style: const TextStyle(
@@ -185,17 +201,17 @@ class FriendsPage extends StatelessWidget {
                   children: [
                     Text(
                       request.sender.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: textPrimaryColor,
                       ),
                     ),
                     Text(
                       '${request.sender.major} • ${request.sender.campus}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: textSecondaryColor,
                       ),
                     ),
                   ],
@@ -206,9 +222,9 @@ class FriendsPage extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '"${request.note}"',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
-              color: AppColors.textBody,
+              color: textBodyColor,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -219,7 +235,7 @@ class FriendsPage extends StatelessWidget {
               TextButton(
                 onPressed: () => provider.declineRequest(request.id),
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
+                  foregroundColor: textSecondaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 child: const Text('Tolak'),
@@ -247,7 +263,7 @@ class FriendsPage extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: primaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -268,14 +284,19 @@ class FriendsPage extends StatelessWidget {
     FriendsProvider provider,
   ) {
     final isKnocked = provider.isKnocked(buddy.id);
+    final primaryColor = AppColors.primaryOf(context);
+    final primaryLightColor = AppColors.primaryLightOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final surfaceColor = AppColors.surfaceOf(context);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: AppColors.borderSubtleOf(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -292,11 +313,11 @@ class FriendsPage extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: primaryLightColor,
                 child: Text(
                   buddy.avatarInitials,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: primaryColor,
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
                   ),
@@ -311,9 +332,9 @@ class FriendsPage extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: buddy.isOnline
                         ? AppColors.activeGreen
-                        : AppColors.textMuted,
+                        : AppColors.textMutedOf(context),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: surfaceColor, width: 2),
                   ),
                 ),
               ),
@@ -330,10 +351,10 @@ class FriendsPage extends StatelessWidget {
                     Flexible(
                       child: Text(
                         buddy.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: textPrimaryColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -346,7 +367,7 @@ class FriendsPage extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: buddy.isOnline
                             ? AppColors.successGreen
-                            : AppColors.textMuted,
+                            : AppColors.textMutedOf(context),
                       ),
                     ),
                   ],
@@ -354,34 +375,34 @@ class FriendsPage extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${buddy.major} • ${buddy.campus}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: textSecondaryColor,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
+                    color: primaryLightColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.menu_book_rounded,
                         size: 13,
-                        color: AppColors.primary,
+                        color: primaryColor,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           buddy.currentStudyTopic,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
+                            color: primaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -408,10 +429,10 @@ class FriendsPage extends StatelessWidget {
                   },
             style: ElevatedButton.styleFrom(
               backgroundColor: isKnocked
-                  ? AppColors.cardSubtleBg
-                  : AppColors.primary,
+                  ? AppColors.cardSubtleBgOf(context)
+                  : primaryColor,
               foregroundColor: isKnocked
-                  ? AppColors.textSecondary
+                  ? textSecondaryColor
                   : Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -424,7 +445,7 @@ class FriendsPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: isKnocked ? AppColors.textMuted : Colors.white,
+                color: isKnocked ? AppColors.textMutedOf(context) : Colors.white,
               ),
             ),
           ),

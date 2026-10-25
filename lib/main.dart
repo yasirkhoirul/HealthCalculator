@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'core/constant/app_colors.dart';
 import 'core/di/injection.dart';
 import 'core/providers/navigation_provider.dart';
+import 'core/theme/app_theme.dart';
 import 'features/auth/view/viewmodels/auth_view_models.dart';
 import 'features/friends/view/viewmodels/friends_provider.dart';
 import 'features/map/view/viewmodels/study_map_provider.dart';
-import 'features/profile/view/viewmodels/profile_provider.dart';
+import 'features/profile/view/viewmodels/profile_viewmodel.dart';
 import 'features/session/view/viewmodels/session_timer_provider.dart';
+import 'features/settings/view/viewmodels/theme_viewmodel.dart';
 import 'router/app_router.dart';
 
 void main() {
@@ -28,21 +29,20 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => locator<StudyMapProvider>()),
         ChangeNotifierProvider(create: (_) => locator<SessionTimerProvider>()),
         ChangeNotifierProvider(create: (_) => locator<FriendsProvider>()),
-        ChangeNotifierProvider(create: (_) => locator<ProfileProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<ProfileViewModel>()),
+        ChangeNotifierProvider(create: (_) => locator<ThemeViewModel>()),
       ],
-      child: MaterialApp.router(
-        title: 'StudyMap',
-        debugShowCheckedModeBanner: false,
-        routerConfig: locator<AppRouter>().router,
-        theme: ThemeData(
-          useMaterial3: true,
-          scaffoldBackgroundColor: AppColors.background,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primary,
-            primary: AppColors.primary,
-          ),
-          fontFamily: 'Inter',
-        ),
+      child: Consumer<ThemeViewModel>(
+        builder: (context, themeVm, _) {
+          return MaterialApp.router(
+            title: 'StudyMap',
+            debugShowCheckedModeBanner: false,
+            routerConfig: locator<AppRouter>().router,
+            themeMode: themeVm.themeMode,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+          );
+        },
       ),
     );
   }

@@ -184,13 +184,13 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              _buildCampusChip('UAD'),
+              const SizedBox(width: 6),
               _buildCampusChip('ITB'),
               const SizedBox(width: 6),
               _buildCampusChip('UI'),
               const SizedBox(width: 6),
               _buildCampusChip('UGM'),
-              const SizedBox(width: 6),
-              _buildCampusChip('Binus'),
               const SizedBox(width: 6),
               _buildCampusChip('50+ Kampus'),
             ],

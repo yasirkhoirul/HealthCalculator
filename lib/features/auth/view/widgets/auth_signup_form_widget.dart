@@ -120,7 +120,7 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
           // 3. Nama Kampus
           AppTextField(
             controller: _campusController,
-            hintText: 'Universitas / Institut (contoh: ITB, UI, UGM)',
+            hintText: 'Universitas / Institut (contoh: Universitas Ahmad Dahlan, UGM)',
             prefixIcon: const Icon(
               Icons.account_balance_outlined,
               color: AppColors.textSecondary,

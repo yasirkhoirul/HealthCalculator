@@ -1,396 +1,297 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:health_calculator/features/auth/view/viewmodels/auth_view_models.dart';
-import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../viewmodels/profile_provider.dart';
+import '../../../../router/app_routes.dart';
+import '../viewmodels/profile_viewmodel.dart';
+import '../widgets/profile_header_widget.dart';
+import '../widgets/profile_stats_widget.dart';
 
-/// Tab 4: Pengaturan / Profil Mahasiswa
+/// Halaman Profil Utama (Tab 4 di Bottom Navigation Bar)
+/// Bersifat Read-Only / Display informasi mahasiswa.
+/// Memuat AppBar dengan tombol Pengaturan (Gear), Header Mahasiswa, Tombol Edit Profil,
+/// Ringkasan Statistik, Bio Aktif, Minat Belajar, dan Status Radar Peta.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final profileProvider = context.watch<ProfileProvider>();
-    final user = profileProvider.user;
+    final profileVm = context.watch<ProfileViewModel>();
+    final user = profileVm.user;
+
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final cardSubtleColor = AppColors.cardSubtleBgOf(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         scrolledUnderElevation: 0.5,
-        title: const Text(
-          'Profil & Pengaturan',
+        title: Text(
+          'Profil',
           style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 19,
+            color: textPrimaryColor,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.settings_outlined,
+              color: primaryColor,
+              size: 24,
+            ),
+            tooltip: 'Pengaturan Sistem',
+            onPressed: () => context.pushNamed(AppRoutes.settings),
+          ),
+          const SizedBox(width: 8),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.borderSubtle, height: 1),
+          child: Container(color: borderSubtleColor, height: 1),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        children: [
-          // 1. Student Profile Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.borderSubtle),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Header Info Pengguna + Tombol Aksi "Edit Profil"
+            ProfileHeaderWidget(user: user),
+
+            const SizedBox(height: 18),
+
+            // 2. Ringkasan Statistik Belajar Semester Ini
+            ProfileStatsWidget(
+              totalFocusHours: user.totalFocusHours,
+              completedSessions: user.completedSessions,
+              connectedBuddies: user.connectedBuddies,
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Stack(
-                      children: [
+
+            const SizedBox(height: 18),
+
+            // 3. Bio & Status Radar Aktif (Display Read-Only)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: primaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Bio & Status Radar',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: textPrimaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: cardSubtleColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderSubtleColor),
+                    ),
+                    child: Text(
+                      user.bio.isNotEmpty
+                          ? user.bio
+                          : 'Belum ada status radar aktif.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textBodyColor,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // 4. Minat Belajar Aktif (Chips Display Read-Only)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.auto_stories_outlined,
+                        size: 18,
+                        color: primaryColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Topik / Minat Belajar Aktif',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                          color: textPrimaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final interest in user.interests)
                         Container(
-                          width: 62,
-                          height: 62,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.studentAvatarPurple,
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            border: Border.all(color: Colors.white, width: 3),
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.25),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color: primaryColor.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'RR',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          child: Text(
+                            interest,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
                             ),
                           ),
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: AppColors.activeGreen,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            // 5. Status Visibilitas di Radar Peta Saat Ini
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: user.isMapVisible
+                          ? (AppColors.isDark(context)
+                              ? AppColors.darkSuccessLight
+                              : AppColors.successLight)
+                          : cardSubtleColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.radar_rounded,
+                        color: user.isMapVisible
+                            ? AppColors.successGreen
+                            : AppColors.textMutedOf(context),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.isMapVisible
+                              ? 'Radar Kampus Aktif (Radius 2 km)'
+                              : 'Mode Hantu (Lokasi Tersembunyi)',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          user.isMapVisible
+                              ? 'Teman sekitar dapat melihat posisimu di Perpustakaan Pusat.'
+                              : 'Lokasimu saat ini tidak ditampilkan di peta kampus.',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: textSecondaryColor,
+                            height: 1.3,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  user.name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.verified_rounded,
-                                color: AppColors.primary,
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${user.major} • NIM ${user.nim}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              user.campus,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 18),
-                const Divider(color: AppColors.borderSubtle),
-                const SizedBox(height: 12),
-
-                // Focus Stats Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem('48.5 Jam', 'Waktu Fokus'),
-                    _buildVerticalDivider(),
-                    _buildStatItem('32 Sesi', 'Terselesaikan'),
-                    _buildVerticalDivider(),
-                    _buildStatItem('18 Rekan', 'Terhubung'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // 2. Presence & Privacy Settings
-          const Text(
-            'Privasi & Visibilitas Zenly-Style',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderSubtle),
-            ),
-            child: Column(
-              children: [
-                SwitchListTile.adaptive(
-                  value: profileProvider.isGhostMode,
-                  onChanged: (_) => profileProvider.toggleGhostMode(),
-                  activeTrackColor: AppColors.primary,
-                  title: const Text(
-                    'Ghost Mode (Mode Hantu)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
                   ),
-                  subtitle: const Text(
-                    'Sembunyikan titik lokasimu secara anonim dari peta kampus',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  secondary: const Icon(
-                    Icons.visibility_off_outlined,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                SwitchListTile.adaptive(
-                  value: profileProvider.allowNearbyKnock,
-                  onChanged: (_) => profileProvider.toggleAllowNearbyKnock(),
-                  activeTrackColor: AppColors.primary,
-                  title: const Text(
-                    'Izinkan Ketukan (Nearby Knock)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Rekan belajar di spot yang sama dapat mengajak sesi bareng',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  secondary: const Icon(
-                    Icons.waving_hand_outlined,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // 3. Quick Actions
-          const Text(
-            'Aksi & Ruang Belajar',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderSubtle),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.add_home_work_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Buat Ruang Belajar Baru',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: const Text(
-                    'Buka room hangout/study dengan kuota peserta di kampus',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.pushNamed(AppRoutes.createRoom),
-                ),
-                const Divider(height: 1, indent: 16, endIndent: 16),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.event_note_rounded,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Buat Jadwal Belajar Baru',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                  subtitle: const Text(
-                    'Atur sesi belajar bersama rekan kuliah di waktu mendatang',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.pushNamed(AppRoutes.createSchedule),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // 4. Logout Button
-          OutlinedButton.icon(
-            onPressed: () {
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Berhasil keluar dari akun StudyMap'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-              context.read<AuthViewModel>().signOut();
-            },
-            icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
-            label: const Text(
-              'Keluar dari Akun',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
+                ],
               ),
             ),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              side: const BorderSide(color: AppColors.error),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
 
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11.5,
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVerticalDivider() {
-    return Container(
-      width: 1,
-      height: 28,
-      color: AppColors.border,
     );
   }
 }

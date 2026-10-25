@@ -20,26 +20,34 @@ class LocationDetailsPage extends StatelessWidget {
       orElse: () => MockData.spots.first,
     );
 
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimaryColor),
           onPressed: () => context.pop(),
         ),
         title: Text(
           spot.name,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
+          style: TextStyle(
+            color: textPrimaryColor,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bookmark_border_rounded, color: AppColors.primary),
+            icon: Icon(Icons.bookmark_border_rounded, color: primaryColor),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -59,15 +67,15 @@ class LocationDetailsPage extends StatelessWidget {
           Container(
             height: 180,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.studentAvatarPurple],
+              gradient: LinearGradient(
+                colors: [primaryColor, AppColors.studentAvatarPurple],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.25),
+                  color: primaryColor.withValues(alpha: 0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -152,9 +160,9 @@ class LocationDetailsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderSubtle),
+              border: Border.all(color: borderSubtleColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,20 +170,20 @@ class LocationDetailsPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Kapasitas Kursi Real-Time',
                       style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: textPrimaryColor,
                       ),
                     ),
                     Text(
                       '${spot.currentCapacity} / ${spot.maxCapacity} Terisi',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: primaryColor,
                       ),
                     ),
                   ],
@@ -186,20 +194,20 @@ class LocationDetailsPage extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: spot.occupancyRatio,
                     minHeight: 10,
-                    backgroundColor: AppColors.border,
+                    backgroundColor: borderColor,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       spot.occupancyRatio > 0.85
                           ? AppColors.error
-                          : AppColors.primary,
+                          : primaryColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Tersedia ${spot.availableSeats} kursi kosong untuk belajar saat ini.',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: textSecondaryColor,
                   ),
                 ),
               ],
@@ -212,17 +220,17 @@ class LocationDetailsPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.borderSubtle),
+              border: Border.all(color: borderSubtleColor),
             ),
             child: Column(
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.access_time_rounded,
-                      color: AppColors.primary,
+                      color: primaryColor,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -230,19 +238,19 @@ class LocationDetailsPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Jam Operasional Kampus',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: textPrimaryColor,
                             ),
                           ),
                           Text(
                             spot.openingHours,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: textSecondaryColor,
                             ),
                           ),
                         ],
@@ -250,12 +258,12 @@ class LocationDetailsPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Divider(height: 20),
+                Divider(height: 20, color: borderSubtleColor),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.domain_rounded,
-                      color: AppColors.primary,
+                      color: primaryColor,
                       size: 20,
                     ),
                     const SizedBox(width: 12),
@@ -263,19 +271,19 @@ class LocationDetailsPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Afiliasi Kampus',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
+                              color: textPrimaryColor,
                             ),
                           ),
                           Text(
                             spot.campus,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: textSecondaryColor,
                             ),
                           ),
                         ],
@@ -290,12 +298,12 @@ class LocationDetailsPage extends StatelessWidget {
           const SizedBox(height: 18),
 
           // 4. Facilities List
-          const Text(
+          Text(
             'Fasilitas Spot Belajar',
             style: TextStyle(
               fontSize: 14.5,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: textPrimaryColor,
             ),
           ),
           const SizedBox(height: 10),
@@ -309,9 +317,9 @@ class LocationDetailsPage extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -324,10 +332,10 @@ class LocationDetailsPage extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       facility,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textBody,
+                        color: textBodyColor,
                       ),
                     ),
                   ],
@@ -359,7 +367,7 @@ class LocationDetailsPage extends StatelessWidget {
               ),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),

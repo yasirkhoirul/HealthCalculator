@@ -15,9 +15,9 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onFieldSubmitted;
   final bool enabled;
   final double borderRadius;
-  final Color fillColor;
-  final Color borderColor;
-  final Color focusedBorderColor;
+  final Color? fillColor;
+  final Color? borderColor;
+  final Color? focusedBorderColor;
   final EdgeInsetsGeometry contentPadding;
 
   const AppTextField({
@@ -34,15 +34,20 @@ class AppTextField extends StatelessWidget {
     this.onFieldSubmitted,
     this.enabled = true,
     this.borderRadius = 24.0,
-    this.fillColor = Colors.white,
-    this.borderColor = AppColors.border,
-    this.focusedBorderColor = AppColors.primary,
+    this.fillColor,
+    this.borderColor,
+    this.focusedBorderColor,
     this.contentPadding =
         const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveFillColor = fillColor ?? AppColors.surfaceOf(context);
+    final effectiveBorderColor = borderColor ?? AppColors.borderOf(context);
+    final effectiveFocusedBorderColor =
+        focusedBorderColor ?? AppColors.primaryOf(context);
+
     return TextFormField(
       controller: controller,
       enabled: enabled,
@@ -51,17 +56,17 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       onFieldSubmitted: onFieldSubmitted,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
-        color: AppColors.textPrimary,
+        color: AppColors.textPrimaryOf(context),
         fontWeight: FontWeight.w500,
       ),
-      cursorColor: focusedBorderColor,
+      cursorColor: effectiveFocusedBorderColor,
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        hintStyle: const TextStyle(
-          color: AppColors.textMuted,
+        hintStyle: TextStyle(
+          color: AppColors.textMutedOf(context),
           fontSize: 14.5,
           fontWeight: FontWeight.w400,
         ),
@@ -82,19 +87,19 @@ class AppTextField extends StatelessWidget {
               )
             : null,
         filled: true,
-        fillColor: fillColor,
+        fillColor: effectiveFillColor,
         contentPadding: contentPadding,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: borderColor, width: 1.2),
+          borderSide: BorderSide(color: effectiveBorderColor, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: borderColor, width: 1.2),
+          borderSide: BorderSide(color: effectiveBorderColor, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: focusedBorderColor, width: 1.8),
+          borderSide: BorderSide(color: effectiveFocusedBorderColor, width: 1.8),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),

@@ -56,19 +56,28 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final primaryLightColor = AppColors.primaryLightOf(context);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimaryColor),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Buat Ruang Belajar',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: textPrimaryColor,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -82,21 +91,21 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Nama Ruang Belajar
-              const Text(
+              Text(
                 'Nama Ruang Belajar Kampus',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _roomNameController,
                 hintText: 'Contoh: Sesi Bedah Soal Kalkulus II',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.meeting_room_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -105,12 +114,12 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               const SizedBox(height: 16),
 
               // 2. Kategori Suasana
-              const Text(
+              Text(
                 'Suasana Belajar',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -123,17 +132,17 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     label: Text(cat),
                     selected: isSelected,
                     onSelected: (_) => setState(() => _selectedCategory = cat),
-                    backgroundColor: AppColors.surface,
-                    selectedColor: AppColors.primary,
+                    backgroundColor: surfaceColor,
+                    selectedColor: primaryColor,
                     labelStyle: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : AppColors.textBody,
+                      color: isSelected ? Colors.white : textBodyColor,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected ? primaryColor : borderColor,
                       ),
                     ),
                   );
@@ -146,26 +155,26 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Batas Maksimal Peserta',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: textPrimaryColor,
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
+                      color: primaryLightColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '${_maxParticipants.toInt()} Orang',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+                        color: primaryColor,
                       ),
                     ),
                   ),
@@ -176,29 +185,29 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 min: 2,
                 max: 15,
                 divisions: 13,
-                activeColor: AppColors.primary,
-                inactiveColor: AppColors.primaryLight,
+                activeColor: primaryColor,
+                inactiveColor: primaryLightColor,
                 onChanged: (val) => setState(() => _maxParticipants = val),
               ),
 
               const SizedBox(height: 14),
 
               // 4. Lokasi Ruangan
-              const Text(
+              Text(
                 'Lokasi Ruangan / Spot',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 6),
               AppTextField(
                 controller: _locationController,
                 hintText: 'Pilih lokasi di peta',
-                prefixIcon: const Icon(
+                prefixIcon: Icon(
                   Icons.pin_drop_rounded,
-                  color: AppColors.textSecondary,
+                  color: textSecondaryColor,
                   size: 20,
                 ),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
@@ -210,26 +219,29 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderSubtle),
+                  border: Border.all(color: borderSubtleColor),
                 ),
-                child: SwitchListTile.adaptive(
-                  value: _requireHostApproval,
-                  onChanged: (val) => setState(() => _requireHostApproval = val),
-                  activeTrackColor: AppColors.primary,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Izin Knock dari Host',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                child: Material(
+                  color: Colors.transparent,
+                  child: SwitchListTile.adaptive(
+                    value: _requireHostApproval,
+                    onChanged: (val) => setState(() => _requireHostApproval = val),
+                    activeTrackColor: primaryColor,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      'Izin Knock dari Host',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: textPrimaryColor,
+                      ),
                     ),
-                  ),
-                  subtitle: const Text(
-                    'Peserta baru harus mengetuk (knock) dan disetujui host',
-                    style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                    subtitle: Text(
+                      'Peserta baru harus mengetuk (knock) dan disetujui host',
+                      style: TextStyle(fontSize: 11.5, color: textSecondaryColor),
+                    ),
                   ),
                 ),
               ),

@@ -16,6 +16,8 @@ class AppRoutes {
   static const String locationDetails = 'locationDetails';
   static const String createSchedule = 'createSchedule';
   static const String createRoom = 'createRoom';
+  static const String settings = 'settings';
+  static const String editProfile = 'edit-profile';
 
   // Route Paths
   static const String rootPath = '/';
@@ -31,4 +33,6 @@ class AppRoutes {
   static const String locationDetailsPath = '/location-details/:id';
   static const String createSchedulePath = '/create-schedule';
   static const String createRoomPath = '/create-room';
+  static const String settingsPath = '/settings';
+  static const String editProfilePath = '/settings/edit-profile';
 }

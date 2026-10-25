@@ -24,6 +24,9 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -34,13 +37,15 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _animateSheetTo(double size) {
-    if (_sheetController.isAttached) {
-      _sheetController.animateTo(
-        size,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _sheetController.isAttached) {
+        _sheetController.animateTo(
+          size,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
   }
 
   @override
@@ -48,16 +53,23 @@ class _MapScreenState extends State<MapScreen> {
     final mapProvider = context.watch<StudyMapProvider>();
     final selectedSpot = mapProvider.selectedSpot;
     final spots = mapProvider.filteredSpots;
+    final isDark = AppColors.isDark(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE5ECF6),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFE5ECF6),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           // ─── 1. Map Viewport (Interactive Campus Canvas with Mock Pins) ───
-          _buildMapViewport(spots, selectedSpot, mapProvider),
+          _buildMapViewport(spots, selectedSpot, mapProvider, isDark),
 
           // ─── 2. Top Floating Section: Search Bar & Horizontal Filter Chips ───
-          _buildTopFloatingSection(mapProvider),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopFloatingSection(context, mapProvider),
+          ),
 
           // ─── 3. Floating Action Buttons (My Location & Create Room) ───
           _buildFloatingActionButtons(context),
@@ -73,7 +85,15 @@ class _MapScreenState extends State<MapScreen> {
   // ─────────────────────────────────────────────────────────────────────────
   // TOP SECTION: Floating Search Bar & Horizontal Filter Chips
   // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildTopFloatingSection(StudyMapProvider mapProvider) {
+  Widget _buildTopFloatingSection(BuildContext context, StudyMapProvider mapProvider) {
+    final surfaceColor = AppColors.surfaceOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textMutedColor = AppColors.textMutedOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final borderColor = AppColors.borderOf(context);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -83,11 +103,11 @@ class _MapScreenState extends State<MapScreen> {
             // Floating Search Bar
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 18,
                     offset: const Offset(0, 4),
                   ),
@@ -96,30 +116,39 @@ class _MapScreenState extends State<MapScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: mapProvider.updateSearchQuery,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: textPrimaryColor,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Cari spot belajar...',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontSize: 13.5,
-                    color: AppColors.textMuted,
+                    color: textMutedColor,
                   ),
-                  prefixIcon: const Icon(
+                  prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: AppColors.primary,
+                    color: primaryColor,
                     size: 22,
                   ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            size: 18,
+                            color: textMutedColor,
+                          ),
                           onPressed: () {
                             _searchController.clear();
                             mapProvider.updateSearchQuery('');
                           },
                         )
-                      : const Padding(
-                          padding: EdgeInsets.only(right: 12),
+                      : Padding(
+                          padding: const EdgeInsets.only(right: 12),
                           child: Icon(
                             Icons.tune_rounded,
-                            color: AppColors.textSecondary,
+                            color: textSecondaryColor,
                             size: 20,
                           ),
                         ),
@@ -149,13 +178,13 @@ class _MapScreenState extends State<MapScreen> {
                     label: Text(category),
                     selected: isSelected,
                     onSelected: (_) => mapProvider.selectCategory(category),
-                    backgroundColor: AppColors.surface,
-                    selectedColor: AppColors.primary,
+                    backgroundColor: surfaceColor,
+                    selectedColor: primaryColor,
                     checkmarkColor: Colors.white,
                     labelStyle: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : AppColors.textBody,
+                      color: isSelected ? Colors.white : textBodyColor,
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -164,12 +193,12 @@ class _MapScreenState extends State<MapScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(19),
                       side: BorderSide(
-                        color: isSelected ? AppColors.primary : AppColors.border,
+                        color: isSelected ? primaryColor : borderColor,
                         width: 1,
                       ),
                     ),
                     elevation: isSelected ? 4 : 1,
-                    shadowColor: AppColors.primary.withValues(alpha: 0.25),
+                    shadowColor: primaryColor.withValues(alpha: 0.25),
                   );
                 },
               ),
@@ -187,12 +216,15 @@ class _MapScreenState extends State<MapScreen> {
     List<StudySpot> spots,
     StudySpot? selectedSpot,
     StudyMapProvider mapProvider,
+    bool isDark,
   ) {
     return Positioned.fill(
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFE8EFF8), Color(0xFFDFE9F5)],
+            colors: isDark
+                ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
+                : const [Color(0xFFE8EFF8), Color(0xFFDFE9F5)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -201,13 +233,46 @@ class _MapScreenState extends State<MapScreen> {
           builder: (context, constraints) {
             return Stack(
               children: [
-                // Canvas Denah Kampus Zenly-Style
-                CustomPaint(
-                  size: Size.infinite,
-                  painter: _CampusMapPainter(),
+                // Canvas Denah Kampus Zenly-Style with tap to dismiss
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      if (mapProvider.isBottomSheetOpen) {
+                        mapProvider.closeBottomSheet();
+                      }
+                      FocusScope.of(context).unfocus();
+                    },
+                    child: CustomPaint(
+                      size: Size.infinite,
+                      painter: _CampusMapPainter(isDark: isDark),
+                    ),
+                  ),
                 ),
 
-                // Marker Pin Spot Belajar Kampus
+                // Mock Student Presence Pins (Zenly-style)
+                Positioned(
+                  left: constraints.maxWidth * 0.15,
+                  top: constraints.maxHeight * 0.36,
+                  child: const _StudentAvatarPin(
+                    initials: 'AF',
+                    name: 'Alif F.',
+                    statusTopic: 'Algoritma & Struktur Data',
+                    statusColor: AppColors.activeGreen,
+                  ),
+                ),
+                Positioned(
+                  left: constraints.maxWidth * 0.62,
+                  top: constraints.maxHeight * 0.50,
+                  child: const _StudentAvatarPin(
+                    initials: 'SJ',
+                    name: 'Sarah J.',
+                    statusTopic: 'Figma UI/UX Design',
+                    statusColor: AppColors.primary,
+                  ),
+                ),
+
+                // Marker Pin Spot Belajar Kampus (Rendered on top for reliable interaction)
                 ...spots.asMap().entries.map((entry) {
                   final index = entry.key;
                   final spot = entry.value;
@@ -226,8 +291,12 @@ class _MapScreenState extends State<MapScreen> {
                     top: constraints.maxHeight * pos.dy - 34,
                     child: GestureDetector(
                       onTap: () {
-                        mapProvider.selectSpot(spot);
-                        _animateSheetTo(0.32);
+                        if (isSelected && mapProvider.isBottomSheetOpen) {
+                          mapProvider.closeBottomSheet();
+                        } else {
+                          mapProvider.selectSpot(spot);
+                          _animateSheetTo(0.30);
+                        }
                       },
                       child: _SpotMarkerPin(
                         spot: spot,
@@ -236,28 +305,6 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   );
                 }),
-
-                // Mock Student Presence Pins (Zenly-style)
-                Positioned(
-                  left: constraints.maxWidth * 0.42,
-                  top: constraints.maxHeight * 0.40,
-                  child: const _StudentAvatarPin(
-                    initials: 'AF',
-                    name: 'Alif F.',
-                    statusTopic: 'Algoritma & Struktur Data',
-                    statusColor: AppColors.activeGreen,
-                  ),
-                ),
-                Positioned(
-                  left: constraints.maxWidth * 0.62,
-                  top: constraints.maxHeight * 0.50,
-                  child: const _StudentAvatarPin(
-                    initials: 'SJ',
-                    name: 'Sarah J.',
-                    statusTopic: 'Figma UI/UX Design',
-                    statusColor: AppColors.primary,
-                  ),
-                ),
               ],
             );
           },
@@ -277,6 +324,7 @@ class _MapScreenState extends State<MapScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildFloatingButton(
+            context: context,
             icon: Icons.my_location_rounded,
             tooltip: 'Lokasi Saya',
             onPressed: () {
@@ -290,6 +338,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
           const SizedBox(height: 10),
           _buildFloatingButton(
+            context: context,
             icon: Icons.add_home_work_rounded,
             tooltip: 'Buat Ruang Belajar Baru',
             isPrimary: true,
@@ -301,18 +350,23 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildFloatingButton({
+    required BuildContext context,
     required IconData icon,
     required String tooltip,
     required VoidCallback onPressed,
     bool isPrimary = false,
   }) {
+    final primaryColor = AppColors.primaryOf(context);
+    final surfaceColor = AppColors.surfaceOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+
     return Container(
       decoration: BoxDecoration(
-        color: isPrimary ? AppColors.primary : AppColors.surface,
+        color: isPrimary ? primaryColor : surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: (isPrimary ? AppColors.primary : Colors.black)
+            color: (isPrimary ? primaryColor : Colors.black)
                 .withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -322,7 +376,7 @@ class _MapScreenState extends State<MapScreen> {
       child: IconButton(
         icon: Icon(
           icon,
-          color: isPrimary ? Colors.white : AppColors.textPrimary,
+          color: isPrimary ? Colors.white : textPrimaryColor,
           size: 22,
         ),
         tooltip: tooltip,
@@ -342,6 +396,18 @@ class _MapScreenState extends State<MapScreen> {
     StudyMapProvider mapProvider,
   ) {
     final buddies = mapProvider.selectedSpotBuddies;
+    final surfaceColor = AppColors.surfaceOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+    final textBodyColor = AppColors.textBodyOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final primaryLightColor = AppColors.primaryLightOf(context);
+    final cardSubtleColor = AppColors.cardSubtleBgOf(context);
+    final successLightColor = AppColors.isDark(context)
+        ? AppColors.darkSuccessLight
+        : AppColors.successLight;
 
     return DraggableScrollableSheet(
       controller: _sheetController,
@@ -353,11 +419,11 @@ class _MapScreenState extends State<MapScreen> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: surfaceColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
+                color: Colors.black.withValues(alpha: 0.15),
                 blurRadius: 28,
                 offset: const Offset(0, -6),
               ),
@@ -373,7 +439,7 @@ class _MapScreenState extends State<MapScreen> {
                   width: 44,
                   height: 4.5,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: borderColor,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -392,39 +458,54 @@ class _MapScreenState extends State<MapScreen> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
+                          color: primaryLightColor,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           spot.category.toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
+                            color: primaryColor,
                             letterSpacing: 0.5,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Top Campus Spot',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                          color: textSecondaryColor,
                         ),
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: AppColors.textMuted,
+                  Tooltip(
+                    message: 'Tutup detail spot',
+                    child: Material(
+                      color: Colors.transparent,
+                      shape: const CircleBorder(),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: mapProvider.closeBottomSheet,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: borderColor.withValues(alpha: 0.35),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 20,
+                            color: textSecondaryColor,
+                          ),
+                        ),
+                      ),
                     ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: mapProvider.closeBottomSheet,
                   ),
                 ],
               ),
@@ -439,8 +520,8 @@ class _MapScreenState extends State<MapScreen> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.studentAvatarPurple],
+                      gradient: LinearGradient(
+                        colors: [primaryColor, AppColors.studentAvatarPurple],
                       ),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -460,10 +541,10 @@ class _MapScreenState extends State<MapScreen> {
                             Flexible(
                               child: Text(
                                 spot.name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
+                                  color: textPrimaryColor,
                                   letterSpacing: -0.2,
                                 ),
                                 maxLines: 1,
@@ -477,7 +558,7 @@ class _MapScreenState extends State<MapScreen> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppColors.successLight,
+                                color: successLightColor,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
@@ -505,9 +586,9 @@ class _MapScreenState extends State<MapScreen> {
                         const SizedBox(height: 3),
                         Text(
                           '${spot.address} • ${spot.distanceMeters}m dari Anda',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: textSecondaryColor,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -526,10 +607,10 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   Text(
                     'Kapasitas Kursi: ${spot.currentCapacity}/${spot.maxCapacity}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textBody,
+                      color: textBodyColor,
                     ),
                   ),
                   Text(
@@ -550,11 +631,11 @@ class _MapScreenState extends State<MapScreen> {
                 child: LinearProgressIndicator(
                   value: spot.occupancyRatio,
                   minHeight: 8,
-                  backgroundColor: AppColors.border,
+                  backgroundColor: borderColor,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     spot.occupancyRatio > 0.85
                         ? AppColors.error
-                        : AppColors.primary,
+                        : primaryColor,
                   ),
                 ),
               ),
@@ -564,21 +645,21 @@ class _MapScreenState extends State<MapScreen> {
               // 5. Buddies Summary Indicator
               Row(
                 children: [
-                  _buildMiniAvatarStack(buddies),
+                  _buildMiniAvatarStack(context, buddies),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '${buddies.length} rekan sedang aktif belajar di spot ini',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: textSecondaryColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   TextButton(
                     onPressed: () => _animateSheetTo(0.88),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -586,13 +667,13 @@ class _MapScreenState extends State<MapScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                            color: primaryColor,
                           ),
                         ),
                         Icon(
                           Icons.keyboard_arrow_up_rounded,
                           size: 16,
-                          color: AppColors.primary,
+                          color: primaryColor,
                         ),
                       ],
                     ),
@@ -600,19 +681,19 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
 
-              const Divider(height: 24, color: AppColors.borderSubtle),
+              Divider(height: 24, color: borderSubtleColor),
 
               // ─────────────────────────────────────────────────────────────
               // 6. EXPANDED CONTENT: Facilities, Buddies List & Action CTA
               // ─────────────────────────────────────────────────────────────
 
               // Fasilitas Lengkap
-              const Text(
+              Text(
                 'Fasilitas Tersedia',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+                  color: textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -626,9 +707,9 @@ class _MapScreenState extends State<MapScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.cardSubtleBg,
+                      color: cardSubtleColor,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: borderColor),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -641,10 +722,10 @@ class _MapScreenState extends State<MapScreen> {
                         const SizedBox(width: 6),
                         Text(
                           facility,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textBody,
+                            color: textBodyColor,
                           ),
                         ),
                       ],
@@ -659,12 +740,12 @@ class _MapScreenState extends State<MapScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Buddies in this Spot',
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: textPrimaryColor,
                     ),
                   ),
                   Container(
@@ -673,7 +754,7 @@ class _MapScreenState extends State<MapScreen> {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary,
+                      color: primaryColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -711,14 +792,14 @@ class _MapScreenState extends State<MapScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        side: const BorderSide(color: AppColors.primary),
+                        side: BorderSide(color: primaryColor),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Halaman Detail',
                         style: TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.primary,
+                          color: primaryColor,
                         ),
                       ),
                     ),
@@ -751,7 +832,7 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -772,13 +853,21 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildBuddyItem(BuildContext context, StudyBuddy buddy) {
+    final surfaceColor = AppColors.surfaceOf(context);
+    final cardSubtleColor = AppColors.cardSubtleBgOf(context);
+    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+    final primaryLightColor = AppColors.primaryLightOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final textSecondaryColor = AppColors.textSecondaryOf(context);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardSubtleBg,
+        color: cardSubtleColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: borderSubtleColor),
       ),
       child: Row(
         children: [
@@ -787,11 +876,11 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.primaryLight,
+                backgroundColor: primaryLightColor,
                 child: Text(
                   buddy.avatarInitials,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: primaryColor,
                     fontWeight: FontWeight.w800,
                     fontSize: 13,
                   ),
@@ -806,9 +895,9 @@ class _MapScreenState extends State<MapScreen> {
                   decoration: BoxDecoration(
                     color: buddy.isOnline
                         ? AppColors.activeGreen
-                        : AppColors.textMuted,
+                        : AppColors.textMutedOf(context),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    border: Border.all(color: surfaceColor, width: 1.5),
                   ),
                 ),
               ),
@@ -821,33 +910,33 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 Text(
                   buddy.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: textPrimaryColor,
                   ),
                 ),
                 Text(
                   buddy.major,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
-                    color: AppColors.textSecondary,
+                    color: textSecondaryColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.borderSubtle),
+                    border: Border.all(color: borderSubtleColor),
                   ),
                   child: Text(
                     buddy.currentStudyTopic,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: primaryColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -867,7 +956,7 @@ class _MapScreenState extends State<MapScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -885,8 +974,10 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildMiniAvatarStack(List<StudyBuddy> buddies) {
+  Widget _buildMiniAvatarStack(BuildContext context, List<StudyBuddy> buddies) {
     final displayBuddies = buddies.take(3).toList();
+    final surfaceColor = AppColors.surfaceOf(context);
+
     return SizedBox(
       width: 48,
       height: 24,
@@ -905,7 +996,7 @@ class _MapScreenState extends State<MapScreen> {
                       : i == 1
                           ? AppColors.studentAvatarOlive
                           : AppColors.studentAvatarSlate,
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: surfaceColor, width: 1.5),
                 ),
                 child: Center(
                   child: Text(
@@ -942,22 +1033,26 @@ class _MapScreenState extends State<MapScreen> {
 // CUSTOM PAINTER: Campus Map Canvas (Roads, Greenery, Lake)
 // ─────────────────────────────────────────────────────────────────────────
 class _CampusMapPainter extends CustomPainter {
+  final bool isDark;
+
+  const _CampusMapPainter({this.isDark = false});
+
   @override
   void paint(Canvas canvas, Size size) {
     final roadPaint = Paint()
-      ..color = Colors.white
+      ..color = isDark ? const Color(0xFF1E293B) : Colors.white
       ..strokeWidth = 26
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final roadBorderPaint = Paint()
-      ..color = const Color(0xFFCAD7E8)
+      ..color = isDark ? const Color(0xFF334155) : const Color(0xFFCAD7E8)
       ..strokeWidth = 30
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final parkPaint = Paint()
-      ..color = const Color(0xFFD4E8DC)
+      ..color = isDark ? const Color(0xFF143026) : const Color(0xFFD4E8DC)
       ..style = PaintingStyle.fill;
 
     // Green campus zones
@@ -981,7 +1076,7 @@ class _CampusMapPainter extends CustomPainter {
 
     // Lake / Water zone (Danau Kenanga UI)
     final lakePaint = Paint()
-      ..color = const Color(0xFFC7DEFA)
+      ..color = isDark ? const Color(0xFF0F2B48) : const Color(0xFFC7DEFA)
       ..style = PaintingStyle.fill;
     final lakePath = Path()
       ..addOval(
@@ -1014,7 +1109,8 @@ class _CampusMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CampusMapPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1031,6 +1127,10 @@ class _SpotMarkerPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryOf(context);
+    final surfaceColor = AppColors.surfaceOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1038,32 +1138,32 @@ class _SpotMarkerPin extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(9),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
+            color: isSelected ? primaryColor : surfaceColor,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: (isSelected ? AppColors.primary : Colors.black)
+                color: (isSelected ? primaryColor : Colors.black)
                     .withValues(alpha: 0.25),
                 blurRadius: isSelected ? 16 : 8,
                 offset: const Offset(0, 4),
               ),
             ],
             border: Border.all(
-              color: isSelected ? Colors.white : AppColors.primary,
+              color: isSelected ? Colors.white : primaryColor,
               width: 2.5,
             ),
           ),
           child: Icon(
             _getSpotIcon(spot.category),
             size: isSelected ? 24 : 18,
-            color: isSelected ? Colors.white : AppColors.primary,
+            color: isSelected ? Colors.white : primaryColor,
           ),
         ),
         const SizedBox(height: 3),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: surfaceColor.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(
@@ -1074,10 +1174,10 @@ class _SpotMarkerPin extends StatelessWidget {
           ),
           child: Text(
             spot.name,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: textPrimaryColor,
             ),
           ),
         ),
@@ -1114,6 +1214,10 @@ class _StudentAvatarPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surfaceColor = AppColors.surfaceOf(context);
+    final textPrimaryColor = AppColors.textPrimaryOf(context);
+    final primaryColor = AppColors.primaryOf(context);
+
     return Tooltip(
       message: '$name • $statusTopic',
       child: Column(
@@ -1127,10 +1231,10 @@ class _StudentAvatarPin extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.studentAvatarPurple],
+                  gradient: LinearGradient(
+                    colors: [primaryColor, AppColors.studentAvatarPurple],
                   ),
-                  border: Border.all(color: Colors.white, width: 2.5),
+                  border: Border.all(color: surfaceColor, width: 2.5),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.2),
@@ -1159,7 +1263,7 @@ class _StudentAvatarPin extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: statusColor,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    border: Border.all(color: surfaceColor, width: 1.5),
                   ),
                 ),
               ),
@@ -1169,15 +1273,15 @@ class _StudentAvatarPin extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
+              color: surfaceColor.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(5),
             ),
             child: Text(
               name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: textPrimaryColor,
               ),
             ),
           ),
