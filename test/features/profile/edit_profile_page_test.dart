@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health_calculator/core/di/injection.dart';
 import 'package:health_calculator/features/profile/view/pages/edit_profile_page.dart';
-import 'package:health_calculator/features/profile/view/viewmodels/edit_profile_viewmodel.dart';
-import 'package:health_calculator/features/profile/view/viewmodels/profile_provider.dart';
+import 'package:health_calculator/features/profile/view/viewmodels/profile_viewmodel.dart';
 import 'package:health_calculator/features/profile/view/widgets/edit_profile/edit_profile_app_bar_widget.dart';
 import 'package:health_calculator/features/profile/view/widgets/edit_profile/edit_profile_header_card_widget.dart';
 import 'package:health_calculator/features/profile/view/widgets/edit_profile/edit_profile_stats_row_widget.dart';
@@ -13,7 +12,7 @@ import 'package:health_calculator/features/profile/view/widgets/edit_profile/edi
 
 void main() {
   setUp(() {
-    if (!locator.isRegistered<EditProfileViewModel>()) {
+    if (!locator.isRegistered<ProfileViewModel>()) {
       setupLocator();
     }
   });

@@ -4,6 +4,8 @@ import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constant/app_colors.dart';
 import '../viewmodels/session_timer_provider.dart';
+import '../widgets/focus_card_widget.dart';
+import '../widgets/timer_ring_widget.dart';
 
 /// Tab 3: Active Session (Sesi Fokus Belajar & Timer Melingkar)
 class SessionPage extends StatelessWidget {
@@ -84,72 +86,15 @@ class SessionPage extends StatelessWidget {
         child: Column(
           children: [
             // 1. Session Title & Location
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: surfaceColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: borderSubtleColor),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: primaryLightColor,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      Icons.track_changes_rounded,
-                      color: primaryColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          timerProvider.sessionTitle,
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: textPrimaryColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: textSecondaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              timerProvider.currentSpotName,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: textSecondaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            FocusCardWidget(
+              title: timerProvider.sessionTitle,
+              spotName: timerProvider.currentSpotName,
             ),
 
             const SizedBox(height: 28),
 
             // 2. Circular Timer Ring
-            _buildCircularTimer(context, timerProvider),
+            TimerRingWidget(timer: timerProvider),
 
             const SizedBox(height: 28),
 
@@ -383,69 +328,6 @@ class SessionPage extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCircularTimer(BuildContext context, SessionTimerProvider timer) {
-    return Center(
-      child: SizedBox(
-        width: 220,
-        height: 220,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Background track
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CircularProgressIndicator(
-                value: 1.0,
-                strokeWidth: 14,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppColors.primaryLightOf(context).withValues(alpha: 0.6),
-                ),
-              ),
-            ),
-            // Active progress arc
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CircularProgressIndicator(
-                value: timer.progressRatio,
-                strokeWidth: 14,
-                strokeCap: StrokeCap.round,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.activeGreen,
-                ),
-              ),
-            ),
-            // Center Time Display
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  timer.formattedTime,
-                  style: TextStyle(
-                    fontSize: 44,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.0,
-                    color: AppColors.textPrimaryOf(context),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  timer.isRunning ? 'Sisa Waktu' : 'Waktu Siap',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondaryOf(context),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
             ),
           ],
         ),

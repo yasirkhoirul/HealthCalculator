@@ -2,12 +2,15 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import '../../../../core/constant/app_base_state.dart';
 import '../../../../core/mock/mock_data.dart';
+import '../../data/source/profile_remote_source.dart';
 
 typedef ProfileState = AppBaseState<UserProfileModel>;
 
 /// ViewModel utama untuk fitur Profil & Pengaturan (StudyMap)
 /// Mengimplementasikan MVVM murni dengan AppBaseState generic.
 class ProfileViewModel extends ChangeNotifier {
+  final ProfileRemoteSource? _remoteSource;
+
   ProfileState _state = const AppStateInitial();
   ProfileState get state => _state;
 
@@ -24,8 +27,10 @@ class ProfileViewModel extends ChangeNotifier {
   bool get allowNearbyKnock => _allowNearbyKnock;
   bool get soundEffectsEnabled => _soundEffectsEnabled;
   bool get isLoading => _state.isLoading;
+  ProfileRemoteSource? get remoteSource => _remoteSource;
 
-  ProfileViewModel() {
+  ProfileViewModel({ProfileRemoteSource? remoteSource})
+      : _remoteSource = remoteSource {
     loadUserProfile();
   }
 
@@ -63,7 +68,11 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      if (_remoteSource != null) {
+        _user = await _remoteSource.fetchProfile();
+      } else {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
       if (_isDisposed) return;
       _state = AppStateSuccess(
         data: _user,
@@ -86,7 +95,11 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (_remoteSource != null) {
+        await _remoteSource.updateProfile(updatedData);
+      } else {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
       if (_isDisposed) return false;
       _user = updatedData;
       _state = AppStateSuccess(

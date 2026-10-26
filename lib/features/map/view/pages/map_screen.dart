@@ -2,12 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:health_calculator/router/app_routes.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/constant/app_base_state.dart';
 import '../../../../core/constant/app_colors.dart';
+import '../../../../core/di/injection.dart';
 import '../../../../core/mock/mock_data.dart';
+import '../../data/models/spot_model.dart';
+import '../../data/models/user_presence_model.dart';
+import '../viewmodels/map_search_viewmodel.dart';
+import '../viewmodels/map_viewmodel.dart';
 import '../viewmodels/study_map_provider.dart';
+import '../widgets/map_bottom_spots_sheet_widget.dart';
+import '../widgets/map_interactive_pins_widget.dart';
+import '../widgets/map_my_location_marker_widget.dart';
+import '../widgets/map_search_filters_widget.dart';
+import '../widgets/map_status_picker_bottom_sheet.dart';
+import '../widgets/map_spot_marker_widget.dart';
+import '../widgets/map_user_detail_bottom_sheet.dart';
+import '../widgets/map_user_marker_widget.dart';
+import '../widgets/search/map_search_overlay_widget.dart';
+import '../widgets/spot_detail/spot_detail_bottom_sheet.dart';
 
-/// Halaman MapScreen lengkap dengan floating search bar, horizontal filter chips,
-/// viewport peta kampus interaktif dengan marker pins, dan draggable/sliding bottom sheet.
+/// Halaman MapScreen lengkap dengan gestur pinch-to-zoom murni, kalkulasi ukuran
+/// marker konstan (Google Maps behavior), floating search bar, dan bottom sheet.
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -15,10 +31,32 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
+  static const double _sheetCollapsedSize = 0.12;
+  static const double _sheetExpandedSize = 0.88;
+
   late final TextEditingController _searchController;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
+
+  late final TransformationController _transformationController;
+  late final AnimationController _recenterAnimationController;
+  Animation<Matrix4>? _recenterMatrixAnimation;
+
+  late final MapSearchViewModel _searchViewModel;
+  bool _isSearchOverlayOpen = false;
+
+  void _resetSheetToCollapsed() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _sheetController.isAttached) {
+        _sheetController.animateTo(
+          _sheetCollapsedSize,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -27,25 +65,181 @@ class _MapScreenState extends State<MapScreen> {
     _searchController.addListener(() {
       if (mounted) setState(() {});
     });
+
+    _searchViewModel = locator.isRegistered<MapSearchViewModel>()
+        ? locator<MapSearchViewModel>()
+        : MapSearchViewModel();
+
+    _transformationController = TransformationController();
+    _transformationController.addListener(_onTransformationChanged);
+
+    _recenterAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    )..addListener(() {
+        if (_recenterMatrixAnimation != null) {
+          _transformationController.value = _recenterMatrixAnimation!.value;
+        }
+      });
+  }
+
+  void _onTransformationChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _sheetController.dispose();
+    _searchViewModel.dispose();
+    _transformationController.removeListener(_onTransformationChanged);
+    _transformationController.dispose();
+    _recenterAnimationController.dispose();
     super.dispose();
   }
 
-  void _animateSheetTo(double size) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _sheetController.isAttached) {
-        _sheetController.animateTo(
-          size,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        );
-      }
-    });
+  void _handleSpotSelectedFromSearch(
+    SpotModel spot,
+    StudyMapProvider mapProvider,
+    MapViewModel? mapVm,
+  ) async {
+    // 1. Simpan history
+    _searchViewModel.addRecentSearch(spot.name);
+
+    // 2. Tutup search overlay & unfocus
+    FocusScope.of(context).unfocus();
+    setState(() => _isSearchOverlayOpen = false);
+
+    // 3. Pusatkan koordinat peta ke posisi spot
+    mapVm?.animateToLocation(spot.latitude, spot.longitude);
+    _animateToSpotLocation(spot);
+
+    // 4. Update status spot terpilih di ViewModel & Provider
+    mapVm?.selectSpot(spot);
+    try {
+      final matchingStudySpot = mapProvider.filteredSpots.firstWhere(
+        (s) =>
+            s.id == spot.id ||
+            s.name.toLowerCase() == spot.name.toLowerCase(),
+      );
+      mapProvider.selectSpot(matchingStudySpot);
+    } catch (_) {}
+
+    // 5. Buka bottom sheet tunggal (Single Source of Truth)
+    await SpotDetailBottomSheet.show(context, spot);
+
+    // 6. Lifecycle & Dismiss: Bersihkan status pin aktif & tetapkan posisi balik bottom sheet
+    if (mounted) {
+      mapVm?.clearSelectedSpot();
+      mapProvider.clearSelectedSpot();
+      _resetSheetToCollapsed();
+    }
+  }
+
+  void _handleSpotMarkerTapped(
+    SpotModel spotModel,
+    StudySpot studySpot,
+    StudyMapProvider mapProvider,
+    MapViewModel? mapVm,
+  ) async {
+    // 1. Panggil mapViewModel.selectSpot(spot)
+    mapVm?.selectSpot(spotModel);
+    mapProvider.selectSpot(studySpot);
+    mapVm?.animateToLocation(spotModel.latitude, spotModel.longitude);
+    _animateToSpotLocation(spotModel);
+
+    // 2. Buka modal melalui SpotDetailBottomSheet.show(context, spot)
+    await SpotDetailBottomSheet.show(context, spotModel);
+
+    // 3. Lifecycle & Dismiss: Ketika modal ditutup, bersihkan status pin aktif & tetapkan posisi balik
+    if (mounted) {
+      mapVm?.clearSelectedSpot();
+      mapProvider.clearSelectedSpot();
+      _resetSheetToCollapsed();
+    }
+  }
+
+  SpotModel _findSpotModel(StudySpot spot, MapViewModel? mapVm) {
+    final spots = mapVm?.allSpots ?? SpotModel.defaultSpots;
+    return spots.firstWhere(
+      (s) =>
+          s.id == spot.id ||
+          s.name.toLowerCase() == spot.name.toLowerCase(),
+      orElse: () => SpotModel(
+        id: spot.id,
+        name: spot.name,
+        category: spot.category,
+        subtitle: spot.address,
+        distanceInMeters: spot.distanceMeters,
+        crowdStatus: '${spot.availableSeats} Meja Tersedia',
+        crowdLevel: spot.isPopular ? 'Moderate Crowd' : 'Silent Zone',
+        friendsSummary: '3 friends nearby',
+        latitude: spot.latitude,
+        longitude: spot.longitude,
+        rating: spot.rating,
+        isOpen: true,
+        openDesks: spot.availableSeats,
+        totalDesks: spot.maxCapacity,
+      ),
+    ).copyWith(name: spot.name);
+  }
+
+  void _animateToSpotLocation(SpotModel spot) {
+    final beginMatrix = _transformationController.value;
+    final endMatrix = Matrix4.identity();
+
+    _recenterMatrixAnimation = Matrix4Tween(
+      begin: beginMatrix,
+      end: endMatrix,
+    ).animate(
+      CurvedAnimation(
+        parent: _recenterAnimationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _recenterAnimationController.reset();
+    _recenterAnimationController.forward();
+  }
+
+  void _animateToUserLocation(MapViewModel? mapVm) {
+    mapVm?.recenterToMyLocation();
+
+    final beginMatrix = _transformationController.value;
+    final endMatrix = Matrix4.identity();
+
+    _recenterMatrixAnimation = Matrix4Tween(
+      begin: beginMatrix,
+      end: endMatrix,
+    ).animate(
+      CurvedAnimation(
+        parent: _recenterAnimationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _recenterAnimationController.reset();
+    _recenterAnimationController.forward();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Memusatkan ke lokasi Anda di ${mapVm?.myLocation?.currentSpotName ?? 'kampus UI'}',
+        ),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _showStatusPickerSheet(BuildContext context, MapViewModel mapVm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MapStatusPickerBottomSheet(mapViewModel: mapVm),
+    );
   }
 
   @override
@@ -55,334 +249,314 @@ class _MapScreenState extends State<MapScreen> {
     final spots = mapProvider.filteredSpots;
     final isDark = AppColors.isDark(context);
 
+    MapViewModel? mapVm;
+    try {
+      mapVm = context.watch<MapViewModel>();
+    } catch (_) {
+      if (locator.isRegistered<MapViewModel>()) {
+        mapVm = locator<MapViewModel>();
+      }
+    }
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFE5ECF6),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // ─── 1. Map Viewport (Interactive Campus Canvas with Mock Pins) ───
-          _buildMapViewport(spots, selectedSpot, mapProvider, isDark),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final matrix = _transformationController.value;
 
-          // ─── 2. Top Floating Section: Search Bar & Horizontal Filter Chips ───
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _buildTopFloatingSection(context, mapProvider),
-          ),
-
-          // ─── 3. Floating Action Buttons (My Location & Create Room) ───
-          _buildFloatingActionButtons(context),
-
-          // ─── 4. Interactive Draggable / Sliding Bottom Sheet ───
-          if (selectedSpot != null && mapProvider.isBottomSheetOpen)
-            _buildDraggableBottomSheet(context, selectedSpot, mapProvider),
-        ],
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // TOP SECTION: Floating Search Bar & Horizontal Filter Chips
-  // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildTopFloatingSection(BuildContext context, StudyMapProvider mapProvider) {
-    final surfaceColor = AppColors.surfaceOf(context);
-    final textPrimaryColor = AppColors.textPrimaryOf(context);
-    final textSecondaryColor = AppColors.textSecondaryOf(context);
-    final textMutedColor = AppColors.textMutedOf(context);
-    final textBodyColor = AppColors.textBodyOf(context);
-    final primaryColor = AppColors.primaryOf(context);
-    final borderColor = AppColors.borderOf(context);
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Floating Search Bar
-            Container(
-              decoration: BoxDecoration(
-                color: surfaceColor,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 18,
-                    offset: const Offset(0, 4),
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              // ─── 1. Map Viewport (Interactive Campus Canvas with Pure Pinch-To-Zoom & Pan) ───
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
+                          : const [Color(0xFFE8EFF8), Color(0xFFDFE9F5)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: mapProvider.updateSearchQuery,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: textPrimaryColor,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Cari spot belajar...',
-                  hintStyle: TextStyle(
-                    fontSize: 13.5,
-                    color: textMutedColor,
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: primaryColor,
-                    size: 22,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.clear_rounded,
-                            size: 18,
-                            color: textMutedColor,
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            mapProvider.updateSearchQuery('');
-                          },
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Icon(
-                            Icons.tune_rounded,
-                            color: textSecondaryColor,
-                            size: 20,
-                          ),
+                  child: InteractiveViewer(
+                    transformationController: _transformationController,
+                    minScale: 0.75,
+                    maxScale: 3.5,
+                    boundaryMargin: const EdgeInsets.all(600),
+                    clipBehavior: Clip.none,
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          mapVm?.clearSelectedUser();
+                          mapVm?.clearSelectedSpot();
+                          mapProvider.clearSelectedSpot();
+                          _resetSheetToCollapsed();
+                          FocusScope.of(context).unfocus();
+                        },
+                        child: CustomPaint(
+                          size: Size(constraints.maxWidth, constraints.maxHeight),
+                          painter: _CampusMapPainter(isDark: isDark),
                         ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 10),
-
-            // Horizontal Filter Chips: "All Spot", "Coworking", "Library", "Event/Meet"
-            SizedBox(
-              height: 38,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: mapProvider.categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final category = mapProvider.categories[index];
-                  final isSelected = mapProvider.selectedCategory == category;
-
-                  return FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (_) => mapProvider.selectCategory(category),
-                    backgroundColor: surfaceColor,
-                    selectedColor: primaryColor,
-                    checkmarkColor: Colors.white,
-                    labelStyle: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : textBodyColor,
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(19),
-                      side: BorderSide(
-                        color: isSelected ? primaryColor : borderColor,
-                        width: 1,
-                      ),
-                    ),
-                    elevation: isSelected ? 4 : 1,
-                    shadowColor: primaryColor.withValues(alpha: 0.25),
-                  );
-                },
+              // ─── 2. Pin & Marker (Ukuran Konstan di Layar / Scale-Invariant Google Maps Behavior) ───
+              ..._buildScaleInvariantMarkers(
+                context: context,
+                constraints: constraints,
+                matrix: matrix,
+                spots: spots,
+                selectedSpot: selectedSpot,
+                mapProvider: mapProvider,
+                mapVm: mapVm,
+                isDark: isDark,
               ),
-            ),
-          ],
-        ),
+
+              // ─── 3. Fixed Viewport HUD Overlays ───
+              // Compass Direction 'N' Control (Fixed HUD - Kiri Atas)
+              Positioned(
+                left: 16,
+                top: 155,
+                child: MapCompassControlWidget(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Kompas: Menghadap ke Utara (N)'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Floating Right Action Controls (Eye, Fire, Target GPS)
+              Positioned(
+                right: 16,
+                top: 150,
+                child: MapRightControlsStackWidget(
+                  onEyeTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Visibilitas: Lokasi aktif terlihat teman'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  onFireTap: () {
+                    mapVm?.setVibe('Coding');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Menampilkan Trending Study Vibe: Coding'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  onGpsTap: () => _animateToUserLocation(mapVm),
+                ),
+              ),
+
+              // ─── 4. Floating Search Bar & Horizontal Filter Chips di Area Atas ───
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: MapSearchFiltersWidget(
+                  mapViewModel: mapVm ?? locator<MapViewModel>(),
+                  mapProvider: mapProvider,
+                  onSearchTap: () => setState(() => _isSearchOverlayOpen = true),
+                  onFilterTap: () => context.pushNamed(AppRoutes.topSpotsList),
+                ),
+              ),
+
+              // ─── 5. Persistent Draggable Bottom Sheet (Top Campus Spots & View Map List) ───
+              _buildDraggableBottomSheet(context, mapVm),
+
+              // ─── 6. Smart Search Overlay View ───
+              if (_isSearchOverlayOpen)
+                Positioned.fill(
+                  child: MapSearchOverlayWidget(
+                    viewModel: _searchViewModel,
+                    onClose: () => setState(() => _isSearchOverlayOpen = false),
+                    onSpotSelected: (spot) {
+                      _handleSpotSelectedFromSearch(spot, mapProvider, mapVm);
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // MAP VIEWPORT: Interactive Campus Canvas with Mock Pins
+  // SCALE-INVARIANT MARKERS (GOOGLE MAPS BEHAVIOR)
+  // Koordinat letak terproyeksi matriks transformasi, sementara dimensi visual
+  // fisik marker (avatar, bubble, chip) tetap konstan di layar perangkat.
   // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildMapViewport(
-    List<StudySpot> spots,
-    StudySpot? selectedSpot,
-    StudyMapProvider mapProvider,
-    bool isDark,
-  ) {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
-                : const [Color(0xFFE8EFF8), Color(0xFFDFE9F5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: [
-                // Canvas Denah Kampus Zenly-Style with tap to dismiss
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      if (mapProvider.isBottomSheetOpen) {
-                        mapProvider.closeBottomSheet();
-                      }
-                      FocusScope.of(context).unfocus();
-                    },
-                    child: CustomPaint(
-                      size: Size.infinite,
-                      painter: _CampusMapPainter(isDark: isDark),
-                    ),
-                  ),
-                ),
+  List<Widget> _buildScaleInvariantMarkers({
+    required BuildContext context,
+    required BoxConstraints constraints,
+    required Matrix4 matrix,
+    required List<StudySpot> spots,
+    required StudySpot? selectedSpot,
+    required StudyMapProvider mapProvider,
+    required MapViewModel? mapVm,
+    required bool isDark,
+  }) {
+    final users = mapVm?.presenceState.dataOrNull ?? const <UserPresenceModel>[];
+    final userOffsets = [
+      const Offset(0.15, 0.35),
+      const Offset(0.38, 0.22),
+      const Offset(0.64, 0.52),
+      const Offset(0.18, 0.62),
+      const Offset(0.72, 0.60),
+    ];
 
-                // Mock Student Presence Pins (Zenly-style)
-                Positioned(
-                  left: constraints.maxWidth * 0.15,
-                  top: constraints.maxHeight * 0.36,
-                  child: const _StudentAvatarPin(
-                    initials: 'AF',
-                    name: 'Alif F.',
-                    statusTopic: 'Algoritma & Struktur Data',
-                    statusColor: AppColors.activeGreen,
-                  ),
-                ),
-                Positioned(
-                  left: constraints.maxWidth * 0.62,
-                  top: constraints.maxHeight * 0.50,
-                  child: const _StudentAvatarPin(
-                    initials: 'SJ',
-                    name: 'Sarah J.',
-                    statusTopic: 'Figma UI/UX Design',
-                    statusColor: AppColors.primary,
-                  ),
-                ),
+    final markers = <Widget>[];
 
-                // Marker Pin Spot Belajar Kampus (Rendered on top for reliable interaction)
-                ...spots.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final spot = entry.value;
-                  final isSelected = selectedSpot?.id == spot.id;
+    // Helper untuk mengkalkulasi koordinat layar dari faktor posisi denah
+    Offset toScreen(double factorX, double factorY) {
+      final base = Offset(constraints.maxWidth * factorX, constraints.maxHeight * factorY);
+      return MatrixUtils.transformPoint(matrix, base);
+    }
 
-                  final positions = [
-                    const Offset(0.32, 0.44), // Main Campus Library Floor 2
-                    const Offset(0.68, 0.38), // Student Hub & Coworking
-                    const Offset(0.48, 0.65), // Engineering Event Hall
-                    const Offset(0.22, 0.68), // Vokasi Creative Coworking
-                  ];
-                  final pos = positions[index % positions.length];
-
-                  return Positioned(
-                    left: constraints.maxWidth * pos.dx - 32,
-                    top: constraints.maxHeight * pos.dy - 34,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (isSelected && mapProvider.isBottomSheetOpen) {
-                          mapProvider.closeBottomSheet();
-                        } else {
-                          mapProvider.selectSpot(spot);
-                          _animateSheetTo(0.30);
-                        }
-                      },
-                      child: _SpotMarkerPin(
-                        spot: spot,
-                        isSelected: isSelected,
-                      ),
-                    ),
-                  );
-                }),
-              ],
+    // 1. Pin 1: ⚡ Kotlin • 45m (Base: 0.16, 0.32)
+    final p1 = toScreen(0.16, 0.32);
+    markers.add(
+      Positioned(
+        left: p1.dx,
+        top: p1.dy,
+        child: MapKotlinPinWidget(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sesi Kotlin: 45m • 84% kapasitas fokus'),
+                duration: Duration(seconds: 1),
+              ),
             );
           },
         ),
       ),
     );
-  }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // FLOATING BUTTONS: My Location & Create Room
-  // ─────────────────────────────────────────────────────────────────────────
-  Widget _buildFloatingActionButtons(BuildContext context) {
-    return Positioned(
-      right: 16,
-      top: 150,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildFloatingButton(
-            context: context,
-            icon: Icons.my_location_rounded,
-            tooltip: 'Lokasi Saya',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Memusatkan ke lokasi Anda di kampus UI'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+    // 2. Pin 2: 👋 Studio • 3 buddies [HOT] (Base: 0.44, 0.18)
+    final p2 = toScreen(0.44, 0.18);
+    markers.add(
+      Positioned(
+        left: p2.dx,
+        top: p2.dy,
+        child: MapStudioHotPinWidget(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Studio: 3 buddies aktif (Trending HOT)'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    // 3. Pin 3: ☕ Calculus • Cafe Ada (Base: 0.60, 0.48)
+    final p3 = toScreen(0.60, 0.48);
+    markers.add(
+      Positioned(
+        left: p3.dx,
+        top: p3.dy,
+        child: MapCalculusCafePinWidget(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Calculus di Cafe Ada: Santai sambil ngopi'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    // 4. Presensi mahasiswa / pengguna lain (MapUserMarkerWidget)
+    for (int i = 0; i < users.length; i++) {
+      final user = users[i];
+      final isSelected = mapVm?.selectedUser?.id == user.id;
+      final offsetFactor = userOffsets[i % userOffsets.length];
+      final screenPos = toScreen(offsetFactor.dx, offsetFactor.dy);
+
+      markers.add(
+        Positioned(
+          left: screenPos.dx - 22,
+          top: screenPos.dy - 22,
+          child: MapUserMarkerWidget(
+            user: user,
+            isSelected: isSelected,
+            onTap: () {
+              mapVm?.selectUser(user);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => MapUserDetailBottomSheet(user: user),
+              ).whenComplete(() => mapVm?.clearSelectedUser());
             },
           ),
-          const SizedBox(height: 10),
-          _buildFloatingButton(
-            context: context,
-            icon: Icons.add_home_work_rounded,
-            tooltip: 'Buat Ruang Belajar Baru',
-            isPrimary: true,
-            onPressed: () => context.pushNamed(AppRoutes.createRoom),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingButton({
-    required BuildContext context,
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-    bool isPrimary = false,
-  }) {
-    final primaryColor = AppColors.primaryOf(context);
-    final surfaceColor = AppColors.surfaceOf(context);
-    final textPrimaryColor = AppColors.textPrimaryOf(context);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isPrimary ? primaryColor : surfaceColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: (isPrimary ? primaryColor : Colors.black)
-                .withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(
-          icon,
-          color: isPrimary ? Colors.white : textPrimaryColor,
-          size: 22,
         ),
-        tooltip: tooltip,
-        onPressed: onPressed,
-      ),
-    );
+      );
+    }
+
+    // 5. Pin Lokasi Saya (Current User Location Pin dengan Pulsing Radar)
+    if (mapVm?.myLocation != null) {
+      final myPos = toScreen(0.50, 0.30);
+      markers.add(
+        Positioned(
+          left: myPos.dx - 29,
+          top: myPos.dy - 29,
+          child: MapMyLocationMarkerWidget(
+            user: mapVm!.myLocation!,
+            onTap: () => _showStatusPickerSheet(context, mapVm),
+          ),
+        ),
+      );
+    }
+
+    // 6. Marker Pin Spot Belajar Kampus
+    final spotPositions = [
+      const Offset(0.32, 0.44), // Main Campus Library Floor 2
+      const Offset(0.68, 0.38), // Student Hub & Coworking
+      const Offset(0.48, 0.65), // Engineering Event Hall
+      const Offset(0.22, 0.68), // Vokasi Creative Coworking
+    ];
+
+    for (int i = 0; i < spots.length; i++) {
+      final spot = spots[i];
+      final isSelected = selectedSpot?.id == spot.id || mapVm?.selectedSpot?.id == spot.id;
+      final posFactor = spotPositions[i % spotPositions.length];
+      final screenPos = toScreen(posFactor.dx, posFactor.dy);
+      final spotModel = _findSpotModel(spot, mapVm);
+
+      markers.add(
+        Positioned(
+          left: screenPos.dx - 32,
+          top: screenPos.dy - 34,
+          child: MapSpotMarkerWidget(
+            spot: spotModel,
+            isSelected: isSelected,
+            onTap: () => _handleSpotMarkerTapped(spotModel, spot, mapProvider, mapVm),
+          ),
+        ),
+      );
+    }
+
+    return markers;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -392,30 +566,24 @@ class _MapScreenState extends State<MapScreen> {
   // ─────────────────────────────────────────────────────────────────────────
   Widget _buildDraggableBottomSheet(
     BuildContext context,
-    StudySpot spot,
-    StudyMapProvider mapProvider,
+    MapViewModel? mapVm,
   ) {
-    final buddies = mapProvider.selectedSpotBuddies;
+    final isDark = AppColors.isDark(context);
     final surfaceColor = AppColors.surfaceOf(context);
     final borderColor = AppColors.borderOf(context);
-    final borderSubtleColor = AppColors.borderSubtleOf(context);
+    final primaryColor = AppColors.primaryOf(context);
     final textPrimaryColor = AppColors.textPrimaryOf(context);
     final textSecondaryColor = AppColors.textSecondaryOf(context);
-    final textBodyColor = AppColors.textBodyOf(context);
-    final primaryColor = AppColors.primaryOf(context);
-    final primaryLightColor = AppColors.primaryLightOf(context);
-    final cardSubtleColor = AppColors.cardSubtleBgOf(context);
-    final successLightColor = AppColors.isDark(context)
-        ? AppColors.darkSuccessLight
-        : AppColors.successLight;
+    final currentLocationName =
+        mapVm?.myLocation?.currentSpotName ?? 'Perpustakaan Pusat UAD';
 
     return DraggableScrollableSheet(
       controller: _sheetController,
-      initialChildSize: 0.30,
-      minChildSize: 0.16,
-      maxChildSize: 0.88,
+      initialChildSize: _sheetCollapsedSize,
+      minChildSize: _sheetCollapsedSize,
+      maxChildSize: _sheetExpandedSize,
       snap: true,
-      snapSizes: const [0.16, 0.30, 0.88],
+      snapSizes: const [_sheetCollapsedSize, 0.42, _sheetExpandedSize],
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
@@ -423,7 +591,7 @@ class _MapScreenState extends State<MapScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
+                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
                 blurRadius: 28,
                 offset: const Offset(0, -6),
               ),
@@ -431,7 +599,7 @@ class _MapScreenState extends State<MapScreen> {
           ),
           child: ListView(
             controller: scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             children: [
               // 1. Drag Handle Pill
               Center(
@@ -444,588 +612,101 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-
-              // 2. Section Header: "Top Campus Spots" & Close Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: primaryLightColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          spot.category.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            color: primaryColor,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Top Campus Spot',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: textSecondaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Tooltip(
-                    message: 'Tutup detail spot',
-                    child: Material(
-                      color: Colors.transparent,
-                      shape: const CircleBorder(),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: mapProvider.closeBottomSheet,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: borderColor.withValues(alpha: 0.35),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 20,
-                            color: textSecondaryColor,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 10),
 
-              // 3. Spot Summary Card (State Default / Collapsed Focus)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primaryColor, AppColors.studentAvatarPurple],
+              // 2. Bar Informasi Lokasi Sekarang (Current Location Bar)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: borderColor, width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      child: Icon(
+                        Icons.my_location_rounded,
+                        size: 17,
+                        color: primaryColor,
+                      ),
                     ),
-                    child: Icon(
-                      _getSpotIcon(spot.category),
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                spot.name,
-                                style: TextStyle(
-                                  fontSize: 16.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: textPrimaryColor,
-                                  letterSpacing: -0.2,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Lokasi Sekarang',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: textSecondaryColor,
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: successLightColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star_rounded,
-                                    color: AppColors.successGreen,
-                                    size: 13,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '${spot.rating}',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.successGreen,
-                                    ),
-                                  ),
-                                ],
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            currentLocationName,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: textPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _animateToUserLocation(mapVm),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.gps_fixed_rounded, size: 12, color: primaryColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Pusatkan',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: primaryColor,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${spot.address} • ${spot.distanceMeters}m dari Anda',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: textSecondaryColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // 4. Capacity & Occupancy Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Kapasitas Kursi: ${spot.currentCapacity}/${spot.maxCapacity}',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: textBodyColor,
-                    ),
-                  ),
-                  Text(
-                    'Tersisa ${spot.availableSeats} kursi',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: spot.availableSeats > 10
-                          ? AppColors.successGreen
-                          : AppColors.error,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(
-                  value: spot.occupancyRatio,
-                  minHeight: 8,
-                  backgroundColor: borderColor,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    spot.occupancyRatio > 0.85
-                        ? AppColors.error
-                        : primaryColor,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // 5. Buddies Summary Indicator
-              Row(
-                children: [
-                  _buildMiniAvatarStack(context, buddies),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${buddies.length} rekan sedang aktif belajar di spot ini',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textSecondaryColor,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => _animateSheetTo(0.88),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Lihat Semua',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: primaryColor,
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_up_rounded,
-                          size: 16,
-                          color: primaryColor,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              Divider(height: 24, color: borderSubtleColor),
-
-              // ─────────────────────────────────────────────────────────────
-              // 6. EXPANDED CONTENT: Facilities, Buddies List & Action CTA
-              // ─────────────────────────────────────────────────────────────
-
-              // Fasilitas Lengkap
-              Text(
-                'Fasilitas Tersedia',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: textPrimaryColor,
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: spot.facilities.map((facility) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardSubtleColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.check_circle_outline_rounded,
-                          size: 14,
-                          color: AppColors.successGreen,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          facility,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: textBodyColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 22),
-
-              // Buddies in this Spot Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Buddies in this Spot',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: textPrimaryColor,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${buddies.length} Mahasiswa',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 12),
 
-              // Daftar Mahasiswa Aktif di Spot
-              ...buddies.map((buddy) => _buildBuddyItem(context, buddy)),
-
-              const SizedBox(height: 24),
-
-              // Action Buttons: Mulai Sesi & Lihat Detail Rute
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        context.pushNamed(
-                          AppRoutes.locationDetails,
-                          pathParameters: {'id': spot.id},
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        side: BorderSide(color: primaryColor),
-                      ),
-                      child: Text(
-                        'Halaman Detail',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Bergabung dan memulai sesi di ${spot.name}',
-                            ),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                        context.goNamed(AppRoutes.session);
-                      },
-                      icon: const Icon(
-                        Icons.flash_on_rounded,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      label: const Text(
-                        'Mulai Sesi',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                    ),
-                  ),
-                ],
+              // 3. Top Campus Spots Live Preview Sheet
+              MapBottomSpotsSheetWidget(
+                mapViewModel: mapVm ?? locator<MapViewModel>(),
+                onViewMapList: () =>
+                    context.pushNamed(AppRoutes.topSpotsList),
               ),
-
               const SizedBox(height: 24),
             ],
           ),
         );
       },
     );
-  }
-
-  Widget _buildBuddyItem(BuildContext context, StudyBuddy buddy) {
-    final surfaceColor = AppColors.surfaceOf(context);
-    final cardSubtleColor = AppColors.cardSubtleBgOf(context);
-    final borderSubtleColor = AppColors.borderSubtleOf(context);
-    final primaryColor = AppColors.primaryOf(context);
-    final primaryLightColor = AppColors.primaryLightOf(context);
-    final textPrimaryColor = AppColors.textPrimaryOf(context);
-    final textSecondaryColor = AppColors.textSecondaryOf(context);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardSubtleColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderSubtleColor),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: primaryLightColor,
-                child: Text(
-                  buddy.avatarInitials,
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: buddy.isOnline
-                        ? AppColors.activeGreen
-                        : AppColors.textMutedOf(context),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: surfaceColor, width: 1.5),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  buddy.name,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: textPrimaryColor,
-                  ),
-                ),
-                Text(
-                  buddy.major,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: surfaceColor,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: borderSubtleColor),
-                  ),
-                  child: Text(
-                    buddy.currentStudyTopic,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Mengajak ${buddy.name} belajar bareng!'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              'Knock',
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniAvatarStack(BuildContext context, List<StudyBuddy> buddies) {
-    final displayBuddies = buddies.take(3).toList();
-    final surfaceColor = AppColors.surfaceOf(context);
-
-    return SizedBox(
-      width: 48,
-      height: 24,
-      child: Stack(
-        children: [
-          for (int i = 0; i < displayBuddies.length; i++)
-            Positioned(
-              left: i * 14.0,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: i == 0
-                      ? AppColors.studentAvatarPurple
-                      : i == 1
-                          ? AppColors.studentAvatarOlive
-                          : AppColors.studentAvatarSlate,
-                  border: Border.all(color: surfaceColor, width: 1.5),
-                ),
-                child: Center(
-                  child: Text(
-                    displayBuddies[i].avatarInitials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  IconData _getSpotIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'library':
-        return Icons.local_library_rounded;
-      case 'coworking':
-        return Icons.laptop_chromebook_rounded;
-      case 'event/meet':
-        return Icons.event_seat_rounded;
-      default:
-        return Icons.school_rounded;
-    }
   }
 }
 
@@ -1113,180 +794,4 @@ class _CampusMapPainter extends CustomPainter {
       oldDelegate.isDark != isDark;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// SPOT PIN & STUDENT AVATAR MARKERS
-// ─────────────────────────────────────────────────────────────────────────
-class _SpotMarkerPin extends StatelessWidget {
-  final StudySpot spot;
-  final bool isSelected;
 
-  const _SpotMarkerPin({
-    required this.spot,
-    required this.isSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final primaryColor = AppColors.primaryOf(context);
-    final surfaceColor = AppColors.surfaceOf(context);
-    final textPrimaryColor = AppColors.textPrimaryOf(context);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: isSelected ? primaryColor : surfaceColor,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: (isSelected ? primaryColor : Colors.black)
-                    .withValues(alpha: 0.25),
-                blurRadius: isSelected ? 16 : 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            border: Border.all(
-              color: isSelected ? Colors.white : primaryColor,
-              width: 2.5,
-            ),
-          ),
-          child: Icon(
-            _getSpotIcon(spot.category),
-            size: isSelected ? 24 : 18,
-            color: isSelected ? Colors.white : primaryColor,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-          decoration: BoxDecoration(
-            color: surfaceColor.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Text(
-            spot.name,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: textPrimaryColor,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  IconData _getSpotIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'library':
-        return Icons.local_library_rounded;
-      case 'coworking':
-        return Icons.laptop_chromebook_rounded;
-      case 'event/meet':
-        return Icons.event_seat_rounded;
-      default:
-        return Icons.school_rounded;
-    }
-  }
-}
-
-class _StudentAvatarPin extends StatelessWidget {
-  final String initials;
-  final String name;
-  final String statusTopic;
-  final Color statusColor;
-
-  const _StudentAvatarPin({
-    required this.initials,
-    required this.name,
-    required this.statusTopic,
-    required this.statusColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final surfaceColor = AppColors.surfaceOf(context);
-    final textPrimaryColor = AppColors.textPrimaryOf(context);
-    final primaryColor = AppColors.primaryOf(context);
-
-    return Tooltip(
-      message: '$name • $statusTopic',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [primaryColor, AppColors.studentAvatarPurple],
-                  ),
-                  border: Border.all(color: surfaceColor, width: 2.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 11,
-                  height: 11,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: surfaceColor, width: 1.5),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-            decoration: BoxDecoration(
-              color: surfaceColor.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: Text(
-              name,
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-                color: textPrimaryColor,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

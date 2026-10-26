@@ -3,16 +3,19 @@ import 'package:go_router/go_router.dart';
 import 'package:health_calculator/features/auth/view/viewmodels/auth_view_models.dart';
 import 'package:health_calculator/router/app_router_redirect.dart';
 import 'package:health_calculator/router/app_routes.dart';
-import '../core/widgets/scaffold_with_nav_bar.dart';
+import '../core/common/scaffold_with_nav_bar.dart';
 import '../features/auth/view/pages/auth_login_page.dart';
 import '../features/auth/view/pages/auth_signup_page.dart';
 import '../features/friends/view/pages/friends_page.dart';
 import '../features/map/view/pages/location_details_page.dart';
-import '../features/map/view/pages/map_page.dart';
+import '../features/map/view/pages/map_screen.dart';
+import '../features/map/view/pages/top_spots_list_page.dart';
 import '../features/profile/view/pages/edit_profile_page.dart';
 import '../features/profile/view/pages/profile_page.dart';
 import '../features/session/view/pages/session_page.dart';
 import '../features/settings/view/pages/settings_main_page.dart';
+import '../features/chat/view/pages/chat_detail_page.dart';
+import '../features/profile/view/pages/user_detail_page.dart';
 import '../features/study/view/pages/create_room_page.dart';
 import '../features/study/view/pages/create_schedule_page.dart';
 import '../stateWithMe.dart';
@@ -71,29 +74,29 @@ class AppRouter {
               GoRoute(
                 path: AppRoutes.mapPath,
                 name: AppRoutes.map,
-                builder: (context, state) => const MapPage(),
+                builder: (context, state) => const MapScreen(),
               ),
             ],
           ),
 
-          // Branch 1: Tab Temukan Teman / Explore
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.friendsPath,
-                name: AppRoutes.friends,
-                builder: (context, state) => const FriendsPage(),
-              ),
-            ],
-          ),
-
-          // Branch 2: Tab Active Session
+          // Branch 1: Tab Active Session / Fokus Belajar (Sesuai Navbar Index 1)
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: AppRoutes.sessionPath,
                 name: AppRoutes.session,
                 builder: (context, state) => const SessionPage(),
+              ),
+            ],
+          ),
+
+          // Branch 2: Tab Rekan Belajar / Pesan & Teman (Sesuai Navbar Index 2)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.friendsPath,
+                name: AppRoutes.friends,
+                builder: (context, state) => const FriendsPage(),
               ),
             ],
           ),
@@ -112,6 +115,12 @@ class AppRouter {
       ),
 
       // 4. Sub-routes (Menimpa layar penuh / Tanpa Bottom Navigation Bar)
+      GoRoute(
+        path: AppRoutes.topSpotsListPath,
+        name: AppRoutes.topSpotsList,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const TopSpotsListPage(),
+      ),
       GoRoute(
         path: AppRoutes.locationDetailsPath,
         name: AppRoutes.locationDetails,
@@ -144,6 +153,24 @@ class AppRouter {
         name: AppRoutes.editProfile,
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const EditProfilePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.chatDetailPath,
+        name: AppRoutes.chatDetail,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? 'buddy-1';
+          return ChatDetailPage(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.userDetailPath,
+        name: AppRoutes.userDetail,
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? 'buddy-1';
+          return UserDetailPage(userId: userId);
+        },
       ),
     ],
   );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constant/app_colors.dart';
-import '../../../../core/widgets/app_primary_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/common/app_primary_button.dart';
+import '../../../../core/common/app_text_field.dart';
 
 /// Pure UI Form widget for StudyMap Sign Up / Registration.
 class AuthSignUpFormWidget extends StatefulWidget {

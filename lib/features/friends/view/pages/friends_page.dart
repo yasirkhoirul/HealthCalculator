@@ -290,66 +290,73 @@ class FriendsPage extends StatelessWidget {
     final textSecondaryColor = AppColors.textSecondaryOf(context);
     final surfaceColor = AppColors.surfaceOf(context);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderSubtleOf(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: primaryLightColor,
-                child: Text(
-                  buddy.avatarInitials,
-                  style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: buddy.isOnline
-                        ? AppColors.activeGreen
-                        : AppColors.textMutedOf(context),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: surfaceColor, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.borderSubtleOf(context)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            context.pushNamed(
+              AppRoutes.chatDetail,
+              pathParameters: {'userId': buddy.id},
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Flexible(
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: primaryLightColor,
                       child: Text(
+                        buddy.avatarInitials,
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: buddy.isOnline
+                              ? const Color(0xFF22C55E)
+                              : AppColors.textMutedOf(context),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: surfaceColor, width: 2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         buddy.name,
                         style: TextStyle(
                           fontSize: 15,
@@ -359,97 +366,87 @@ class FriendsPage extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      buddy.isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: buddy.isOnline
-                            ? AppColors.successGreen
-                            : AppColors.textMutedOf(context),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${buddy.major} • ${buddy.campus}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: textSecondaryColor,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${buddy.major} • ${buddy.campus}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textSecondaryColor,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: primaryLightColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.menu_book_rounded,
-                        size: 13,
-                        color: primaryColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          buddy.currentStudyTopic,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: primaryColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: primaryLightColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.menu_book_rounded,
+                              size: 13,
+                              color: primaryColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                buddy.currentStudyTopic,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: primaryColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: isKnocked
+                      ? null
+                      : () {
+                          provider.knockBuddy(buddy.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Mengajak ${buddy.name} belajar bareng!'),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isKnocked
+                        ? AppColors.cardSubtleBgOf(context)
+                        : primaryColor,
+                    foregroundColor: isKnocked
+                        ? textSecondaryColor
+                        : Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    isKnocked ? 'Terkirim' : 'Knock',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: isKnocked ? AppColors.textMutedOf(context) : Colors.white,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          ElevatedButton(
-            onPressed: isKnocked
-                ? null
-                : () {
-                    provider.knockBuddy(buddy.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Mengajak ${buddy.name} belajar bareng!'),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isKnocked
-                  ? AppColors.cardSubtleBgOf(context)
-                  : primaryColor,
-              foregroundColor: isKnocked
-                  ? textSecondaryColor
-                  : Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              isKnocked ? 'Terkirim' : 'Knock',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: isKnocked ? AppColors.textMutedOf(context) : Colors.white,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

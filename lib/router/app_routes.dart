@@ -18,6 +18,9 @@ class AppRoutes {
   static const String createRoom = 'createRoom';
   static const String settings = 'settings';
   static const String editProfile = 'edit-profile';
+  static const String chatDetail = 'chat-detail';
+  static const String userDetail = 'user-detail';
+  static const String topSpotsList = 'top-spots-list';
 
   // Route Paths
   static const String rootPath = '/';
@@ -31,8 +34,11 @@ class AppRoutes {
   static const String profilePath = '/profile';
 
   static const String locationDetailsPath = '/location-details/:id';
+  static const String topSpotsListPath = '/map/spots';
   static const String createSchedulePath = '/create-schedule';
   static const String createRoomPath = '/create-room';
   static const String settingsPath = '/settings';
   static const String editProfilePath = '/settings/edit-profile';
+  static const String chatDetailPath = '/chat/:userId';
+  static const String userDetailPath = '/profile/user/:userId';
 }

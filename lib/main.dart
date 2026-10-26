@@ -5,6 +5,7 @@ import 'core/providers/navigation_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/view/viewmodels/auth_view_models.dart';
 import 'features/friends/view/viewmodels/friends_provider.dart';
+import 'features/map/view/viewmodels/map_viewmodel.dart';
 import 'features/map/view/viewmodels/study_map_provider.dart';
 import 'features/profile/view/viewmodels/profile_viewmodel.dart';
 import 'features/session/view/viewmodels/session_timer_provider.dart';
@@ -27,6 +28,7 @@ class MainApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => locator<AuthViewModel>()),
         ChangeNotifierProvider(create: (_) => locator<NavigationProvider>()),
         ChangeNotifierProvider(create: (_) => locator<StudyMapProvider>()),
+        ChangeNotifierProvider(create: (_) => locator<MapViewModel>()),
         ChangeNotifierProvider(create: (_) => locator<SessionTimerProvider>()),
         ChangeNotifierProvider(create: (_) => locator<FriendsProvider>()),
         ChangeNotifierProvider(create: (_) => locator<ProfileViewModel>()),

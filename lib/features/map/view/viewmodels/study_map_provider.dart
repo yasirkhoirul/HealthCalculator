@@ -16,8 +16,8 @@ class StudyMapProvider extends ChangeNotifier {
   bool _isBottomSheetOpen = true;
   bool _isExpanded = false;
 
-  StudyMapProvider() {
-    _selectedSpot = MockData.spots.isNotEmpty ? MockData.spots.first : null;
+  StudyMapProvider({StudySpot? initialSpot}) {
+    _selectedSpot = initialSpot;
   }
 
   List<String> get categories => _categories;
@@ -63,6 +63,11 @@ class StudyMapProvider extends ChangeNotifier {
   void selectSpot(StudySpot spot) {
     _selectedSpot = spot;
     _isBottomSheetOpen = true;
+    notifyListeners();
+  }
+
+  void clearSelectedSpot() {
+    _selectedSpot = null;
     notifyListeners();
   }
 

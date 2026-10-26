@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health_calculator/core/di/injection.dart';
-import 'package:health_calculator/core/mock/mock_data.dart';
 import 'package:health_calculator/core/theme/app_theme.dart';
 import 'package:health_calculator/features/auth/view/viewmodels/auth_view_models.dart';
 import 'package:health_calculator/features/friends/view/pages/friends_page.dart';
@@ -9,6 +8,7 @@ import 'package:health_calculator/features/friends/view/viewmodels/friends_provi
 import 'package:health_calculator/features/map/view/pages/location_details_page.dart';
 import 'package:health_calculator/features/map/view/pages/map_screen.dart';
 import 'package:health_calculator/features/map/view/viewmodels/study_map_provider.dart';
+import 'package:health_calculator/features/map/view/widgets/map_spot_marker_widget.dart';
 import 'package:health_calculator/features/profile/view/pages/profile_page.dart';
 import 'package:health_calculator/features/profile/view/viewmodels/profile_viewmodel.dart';
 import 'package:health_calculator/features/session/view/pages/session_page.dart';
@@ -53,9 +53,9 @@ void main() {
     expect(find.byType(MapScreen), findsOneWidget);
     expect(find.text('Cari spot belajar...'), findsOneWidget);
 
-    // Select a spot directly via mapProvider
-    final mapProvider = tester.element(find.byType(MapScreen)).read<StudyMapProvider>();
-    mapProvider.selectSpot(MockData.spots.first);
+    // Tap spot pin marker to open unified SpotDetailBottomSheet
+    final spotPin = find.byType(MapSpotMarkerWidget).first;
+    await tester.tap(spotPin);
     await tester.pumpAndSettle();
 
     // Verify bottom sheet is open
@@ -69,7 +69,7 @@ void main() {
     expect(find.byIcon(Icons.close_rounded), findsNothing);
 
     // Now tap to select spot again
-    mapProvider.selectSpot(MockData.spots.first);
+    await tester.tap(spotPin);
     await tester.pumpAndSettle();
 
     // Verify bottom sheet is open again

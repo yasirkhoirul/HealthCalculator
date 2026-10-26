@@ -102,7 +102,7 @@ class EditInterestsWidget extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).then((_) => textController.dispose());
   }
 
   @override
