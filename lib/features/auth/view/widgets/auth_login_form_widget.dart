@@ -3,20 +3,20 @@ import '../../../../core/constant/app_colors.dart';
 import '../../../../core/common/app_primary_button.dart';
 import '../../../../core/common/app_text_field.dart';
 
-/// Form widget for StudyMap campus email login.
+/// Form widget for StudyMap login with FakeStore Username & Password.
 /// Includes:
-/// - Divider ("atau gunakan email kampus")
-/// - Campus email input with graduation cap icon
-/// - "Lanjutkan dengan Email Kampus" button with right arrow
+/// - Divider ("atau masuk dengan username")
+/// - Username + Password input fields with visibility toggle
+/// - Submit button with loading state
 /// - Privacy assurance banner ("Privasi terjamin...")
-/// - Campus badges row (ITB, UI, UGM, Binus, 50+ Kampus)
+/// - Campus badges row (UAD, ITB, UI, UGM, 50+ Kampus)
 class AuthLoginFormWidget extends StatefulWidget {
-  final ValueChanged<String>? onEmailSubmit;
+  final void Function(String username, String password)? onUsernameSubmit;
   final bool isLoading;
 
   const AuthLoginFormWidget({
     super.key,
-    this.onEmailSubmit,
+    this.onUsernameSubmit,
     this.isLoading = false,
   });
 
@@ -26,23 +26,32 @@ class AuthLoginFormWidget extends StatefulWidget {
 
 class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _emailController;
+  late final TextEditingController _usernameController;
+  late final TextEditingController _passwordController;
+  late final ValueNotifier<bool> _obscurePassword;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _usernameController = TextEditingController();
+    _passwordController = TextEditingController();
+    _obscurePassword = ValueNotifier<bool>(true);
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _obscurePassword.dispose();
     super.dispose();
   }
 
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      widget.onEmailSubmit?.call(_emailController.text.trim());
+      widget.onUsernameSubmit?.call(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
     }
   }
 
@@ -53,7 +62,7 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Divider with text "atau gunakan email kampus"
+          // 1. Divider with text
           Row(
             children: [
               const Expanded(
@@ -65,7 +74,7 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'atau gunakan email kampus',
+                  'atau masuk dengan username',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: AppColors.textSecondary,
@@ -84,37 +93,69 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
 
           const SizedBox(height: 18),
 
-          // 2. Campus Email Input Field
+          // 2. Username Input Field
           AppTextField(
-            controller: _emailController,
-            hintText: 'nama@kampus.ac.id',
-            keyboardType: TextInputType.emailAddress,
+            controller: _usernameController,
+            hintText: 'Username (contoh: mor_2314)',
+            keyboardType: TextInputType.text,
             prefixIcon: const Icon(
-              Icons.school_outlined,
+              Icons.person_outline_rounded,
               color: AppColors.textSecondary,
               size: 22,
             ),
             validator: (value) {
               final trimmed = value?.trim() ?? '';
               if (trimmed.isEmpty) {
-                return 'Silakan masukkan email kampus kamu';
-              }
-              final emailRegex = RegExp(
-                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-              );
-              if (!emailRegex.hasMatch(trimmed)) {
-                return 'Format email tidak valid (contoh: nama@kampus.ac.id)';
+                return 'Silakan masukkan username kamu';
               }
               return null;
             },
             onFieldSubmitted: (_) => _handleSubmit(),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // 3. Primary Button: "Lanjutkan dengan Email Kampus"
+          // 3. Password Input Field with toggle visibility
+          ValueListenableBuilder<bool>(
+            valueListenable: _obscurePassword,
+            builder: (context, isObscure, child) {
+              return AppTextField(
+                controller: _passwordController,
+                hintText: 'Kata sandi (contoh: 83r5^_)',
+                obscureText: isObscure,
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.textSecondary,
+                  size: 22,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isObscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _obscurePassword.value = !_obscurePassword.value;
+                  },
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Silakan masukkan kata sandi kamu';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _handleSubmit(),
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // 4. Submit Button: Masuk dengan Username
           AppPrimaryButton(
-            text: 'Lanjutkan dengan Email Kampus',
+            text: 'Masuk dengan Username',
             isLoading: widget.isLoading,
             trailingIcon: const Icon(
               Icons.arrow_forward_rounded,
@@ -127,7 +168,7 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
 
           const SizedBox(height: 18),
 
-          // 4. Privacy Assurance Banner
+          // 5. Privacy Assurance Banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -180,7 +221,7 @@ class _AuthLoginFormWidgetState extends State<AuthLoginFormWidget> {
 
           const SizedBox(height: 14),
 
-          // 5. Campus Badges / Chips
+          // 6. Campus Badges / Chips
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

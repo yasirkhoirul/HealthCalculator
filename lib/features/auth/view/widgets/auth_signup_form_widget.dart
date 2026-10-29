@@ -3,13 +3,10 @@ import '../../../../core/constant/app_colors.dart';
 import '../../../../core/common/app_primary_button.dart';
 import '../../../../core/common/app_text_field.dart';
 
-/// Pure UI Form widget for StudyMap Sign Up / Registration.
+/// Form widget for StudyMap Sign Up / Registration with FakeStore Username & Password.
 class AuthSignUpFormWidget extends StatefulWidget {
-  /// Dipanggil hanya jika seluruh field valid.
   final void Function({
-    required String name,
-    required String email,
-    required String campus,
+    required String username,
     required String password,
   })? onSubmit;
   final bool isLoading;
@@ -26,39 +23,37 @@ class AuthSignUpFormWidget extends StatefulWidget {
 
 class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nameController;
-  late final TextEditingController _emailController;
-  late final TextEditingController _campusController;
+  late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
+  late final TextEditingController _confirmPasswordController;
 
   late final ValueNotifier<bool> _obscurePassword;
+  late final ValueNotifier<bool> _obscureConfirmPassword;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _emailController = TextEditingController();
-    _campusController = TextEditingController();
+    _usernameController = TextEditingController();
     _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
     _obscurePassword = ValueNotifier<bool>(true);
+    _obscureConfirmPassword = ValueNotifier<bool>(true);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _campusController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _obscurePassword.dispose();
+    _obscureConfirmPassword.dispose();
     super.dispose();
   }
 
   void _handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
       widget.onSubmit?.call(
-        name: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        campus: _campusController.text.trim(),
+        username: _usernameController.text.trim(),
         password: _passwordController.text,
       );
     }
@@ -71,72 +66,32 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Nama Lengkap
+          // 1. Username
           AppTextField(
-            controller: _nameController,
-            hintText: 'Nama lengkap kamu',
+            controller: _usernameController,
+            hintText: 'Pilih username (contoh: user_baru)',
+            keyboardType: TextInputType.text,
             prefixIcon: const Icon(
               Icons.person_outline_rounded,
               color: AppColors.textSecondary,
               size: 22,
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Silakan masukkan nama lengkap';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 2. Email Kampus
-          AppTextField(
-            controller: _emailController,
-            hintText: 'nama@kampus.ac.id',
-            keyboardType: TextInputType.emailAddress,
-            prefixIcon: const Icon(
-              Icons.school_outlined,
-              color: AppColors.textSecondary,
-              size: 22,
-            ),
-            validator: (value) {
               final trimmed = value?.trim() ?? '';
               if (trimmed.isEmpty) {
-                return 'Silakan masukkan email kampus';
+                return 'Silakan masukkan username baru';
               }
-              final emailRegex = RegExp(
-                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-              );
-              if (!emailRegex.hasMatch(trimmed)) {
-                return 'Format email tidak valid (contoh: nama@kampus.ac.id)';
+              if (trimmed.length < 3) {
+                return 'Username minimal 3 karakter';
               }
               return null;
             },
+            onFieldSubmitted: (_) => _handleSubmit(),
           ),
 
           const SizedBox(height: 12),
 
-          // 3. Nama Kampus
-          AppTextField(
-            controller: _campusController,
-            hintText: 'Universitas / Institut (contoh: Universitas Ahmad Dahlan, UGM)',
-            prefixIcon: const Icon(
-              Icons.account_balance_outlined,
-              color: AppColors.textSecondary,
-              size: 22,
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Silakan masukkan asal kampus';
-              }
-              return null;
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // 4. Kata Sandi
+          // 2. Kata Sandi
           ValueListenableBuilder<bool>(
             valueListenable: _obscurePassword,
             builder: (context, isObscure, child) {
@@ -167,15 +122,58 @@ class _AuthSignUpFormWidgetState extends State<AuthSignUpFormWidget> {
                   }
                   return null;
                 },
+                onFieldSubmitted: (_) => _handleSubmit(),
+              );
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // 3. Konfirmasi Kata Sandi
+          ValueListenableBuilder<bool>(
+            valueListenable: _obscureConfirmPassword,
+            builder: (context, isObscure, child) {
+              return AppTextField(
+                controller: _confirmPasswordController,
+                hintText: 'Ulangi kata sandi',
+                obscureText: isObscure,
+                prefixIcon: const Icon(
+                  Icons.lock_reset_rounded,
+                  color: AppColors.textSecondary,
+                  size: 22,
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    isObscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _obscureConfirmPassword.value =
+                        !_obscureConfirmPassword.value;
+                  },
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Silakan konfirmasi kata sandi kamu';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Kata sandi tidak cocok';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => _handleSubmit(),
               );
             },
           ),
 
           const SizedBox(height: 18),
 
-          // 5. Tombol Submit Pendaftaran
+          // 4. Tombol Submit Pendaftaran
           AppPrimaryButton(
-            text: 'Daftar Akun Baru',
+            text: 'Daftar dengan Username',
             isLoading: widget.isLoading,
             trailingIcon: const Icon(
               Icons.arrow_forward_rounded,

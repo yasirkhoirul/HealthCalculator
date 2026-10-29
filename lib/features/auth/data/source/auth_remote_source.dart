@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:health_calculator/features/auth/data/models/auth_username_model.dart';
+import 'package:http/http.dart' as http;
 import '../models/auth_user_model.dart';
 
 /// Remote data source untuk fitur autentikasi (Firebase / REST API).
@@ -45,5 +48,78 @@ class AuthRemoteSource {
       email: email,
       campus: campus.isEmpty ? 'Universitas Ahmad Dahlan' : campus,
     );
+  }
+
+  Future<String> signInWithUserName(AuthUsernameModel authUsernameModel) async {
+    final client = http.Client();
+    try {
+      final response = await client.post(
+        Uri.https("fakestoreapi.com", "/auth/login"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(authUsernameModel.toJson()),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        final token = result['token'] as String?;
+        if (token != null && token.isNotEmpty) {
+          return token;
+        }
+        throw Exception('Token tidak ditemukan dalam respon.');
+      } else {
+        final bodyText = response.body.trim();
+        throw Exception(
+          bodyText.isNotEmpty
+              ? bodyText
+              : 'Login gagal (Kode: ${response.statusCode})',
+        );
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Mendaftarkan pengguna baru via endpoint FakeStore API (POST /users).
+  Future<int> signUpWithUserName({
+    required String username,
+    required String password,
+    String? email,
+  }) async {
+    final client = http.Client();
+    try {
+      final response = await client.post(
+        Uri.https("fakestoreapi.com", "/users"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'email': email ?? '$username@fakestore.com',
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        final id = result['id'];
+        if (id is int) {
+          return id;
+        } else if (id != null) {
+          return int.tryParse(id.toString()) ?? 1;
+        }
+        return 1;
+      } else {
+        final bodyText = response.body.trim();
+        throw Exception(
+          bodyText.isNotEmpty
+              ? bodyText
+              : 'Pendaftaran gagal (Kode: ${response.statusCode})',
+        );
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      client.close();
+    }
   }
 }

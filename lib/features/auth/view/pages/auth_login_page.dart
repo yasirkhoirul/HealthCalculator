@@ -49,14 +49,14 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
     }
   }
 
-  Future<void> _handleEmailSubmit(String email) async {
+  Future<void> _handleUsernameSubmit(String username, String password) async {
     final vm = context.read<AuthViewModel>();
-    await vm.signInWithEmail(email);
+    await vm.signInWithUserName(username, password);
     if (!mounted) return;
 
     switch (vm.stateLogin) {
       case AppAuthStateSuccess():
-        _showFeedback('Berhasil masuk dengan email kampus!');
+        _showFeedback('Berhasil login sebagai $username!');
       case AppAuthStateError(:final message):
         _showFeedback(message);
       default:
@@ -163,10 +163,10 @@ class _AuthLoginPageState extends State<AuthLoginPage> {
 
                     const SizedBox(height: 18),
 
-                    // 3. Campus Email Form & Submit Button
+                    // 3. Username Form & Submit Button
                     AuthLoginFormWidget(
                       isLoading: isLoading,
-                      onEmailSubmit: _handleEmailSubmit,
+                      onUsernameSubmit: _handleUsernameSubmit,
                     ),
 
                     const SizedBox(height: 20),

@@ -50,23 +50,19 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
   }
 
   Future<void> _handleSignUpSubmit({
-    required String name,
-    required String email,
-    required String campus,
+    required String username,
     required String password,
   }) async {
     final vm = context.read<AuthViewModel>();
-    await vm.signUpWithEmail(
-      name: name,
-      email: email,
-      campus: campus,
+    await vm.signUpWithUserName(
+      username: username,
       password: password,
     );
     if (!mounted) return;
 
     switch (vm.stateLogin) {
       case AppAuthStateSuccess():
-        _showFeedback('Akun berhasil dibuat! Mengarahkan ke peta...');
+        _showFeedback('Akun $username berhasil dibuat! Mengarahkan ke peta...');
         context.goNamed(AppRoutes.map);
       case AppAuthStateError(:final message):
         _showFeedback(message);
@@ -172,7 +168,7 @@ class _AuthSignUpPageState extends State<AuthSignUpPage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
-                            'atau daftar dengan email kampus',
+                            'atau daftar dengan username',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: AppColors.textSecondary,

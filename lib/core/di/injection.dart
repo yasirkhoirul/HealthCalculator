@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:health_calculator/features/auth/data/source/auth_local_source.dart';
 import '../../features/auth/data/source/auth_remote_source.dart';
 import '../../features/auth/view/viewmodels/auth_view_models.dart';
 import '../../features/chat/data/source/chat_remote_source.dart';
@@ -29,9 +30,11 @@ void setupLocator() {
   locator.registerLazySingleton<ProfileRemoteSource>(() => ProfileRemoteSource());
   locator.registerLazySingleton<SessionRemoteSource>(() => SessionRemoteSource());
 
+  locator.registerLazySingleton<AuthLocalSource>(() => AuthLocalSource());
+
   // 2. Global ViewModels (LazySingleton)
   locator.registerLazySingleton<AuthViewModel>(
-    () => AuthViewModel(locator<AuthRemoteSource>()),
+    () => AuthViewModel(locator<AuthRemoteSource>(), locator<AuthLocalSource>()),
   );
   locator.registerLazySingleton<ThemeViewModel>(() => ThemeViewModel());
   locator.registerLazySingleton<ProfileViewModel>(
